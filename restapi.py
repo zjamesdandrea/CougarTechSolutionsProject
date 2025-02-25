@@ -75,7 +75,88 @@ def update_user():
     execute_update_query(mycon, sql)
     return "User information update successful"
 
+# Delelte user by ID (customer)
+@app.route('/user', methods=['DELETE'])
+def delete_user():
+    data = request.get_json()
+    idtodelete = data['id']
 
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    sql = f"delete from Users where id = '{idtodelete}'"
+    execute_update_query(mycon, sql)
+    return "User deletion successful"
+
+#---------------------Card CRUD----------------------------
+# Retun all baseball cards (customer/admin)
+@app.route('/card/all', methods = ['GET'])
+def all_card():
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    sql = "select * from Baseball_Cards"
+
+    userrows = execute_read_query(mycon, sql)
+    return jsonify(userrows)
+
+# Select card by ID (customer/admin)
+@app.route("/card/", methods=['GET'])
+def select_card():
+    card_id = request.args.get('id')
+    if not card_id:
+        return 'Error: No ID provided'
+    
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    sql = f"select * from Baseball_Cards where id = {card_id}"
+    userrows = execute_read_query(mycon, sql)
+    return jsonify(userrows)
+
+# Add new card (admin)
+@app.route("/card", methods=["POST"])
+def add_card():
+    data = request.get_json()
+    fname = data['first_name']
+    lname = data['last_name']
+    team = data['team']
+    autograph = data['autograph']
+    price = data['price']
+    image_url = data['image_url']
+    additional_specification = data['additional_specifications']
+
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    sql = f"INSERT INTO Baseball_Cards (first_name, last_name, team, autograph, price, image_url, additional_specifications) VALUES ('{fname}', '{lname}', '{team}', '{autograph}', '{price}', '{image_url}', '{additional_specification}')"
+    execute_update_query(mycon, sql)
+    return "Baseball card added successfully"
+
+# Update card information by ID (admin)
+@app.route("/card", methods=["PUT"])
+def update_card():
+    data = request.get_json()
+    card_id = data['id']
+    team = data['team']
+    autograph = data['autograph']
+    price = data['price']
+    image_url = data['image_url']
+    additional_specifications = data['additional_specifications']
+
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    sql = f"UPDATE Baseball_Cards SET team = '{team}', autograph = '{autograph}', price = '{price}', image_url = '{image_url}', additional_specifications = '{additional_specifications}' WHERE id = '{card_id}'"
+    execute_update_query(mycon, sql)
+    return "Baseball card updated successfully"
+
+# Delete card by ID (admin)
+@app.route('/card', methods=['DELETE'])
+def delete_card():
+    data = request.get_json()
+    idtodelete = data['id']
+
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    sql = f"delete from Baseball_Cards where id = '{idtodelete}'"
+    execute_update_query(mycon, sql)
+    return "Baseball card deletion successful"
 
 
 
