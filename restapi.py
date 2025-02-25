@@ -14,61 +14,92 @@ import smtplib
 app = flask.Flask(__name__)
 app.config['DEBUG'] = True
 
-#-------------------User CRUD------------------------
+# ------------------- User CRUD ------------------------
 # Register a new customer
 @app.route("/user", methods=['POST'])
 def register_user():
     data = request.get_json()
-    fname = data['first_name']
-    lname = data['last_name']
-    email = data['email']
-    password = data['password']
-    address = data['address']
-    city = data['city']
-    state = data['state']
-    zip_code = data['zip']
+    fname, lname = data['first_name'], data['last_name']
+    email, password = data['email'], data['password']
+    address, city, state, zip_code = data['address'], data['city'], data['state'], data['zip']
 
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
     
-    sql = f"INSERT INTO user (first_name, last_name, email, password, address, city, state, zip) VALUES ('{fname}', '{lname}', '{email}', '{password}', '{address}', '{city}', '{state}', '{zip_code}')"
-    execute_update_query(mycon, sql)
+    sql = "INSERT INTO user (first_name, last_name, email, password, address, city, state, zip) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+    values = (fname, lname, email, password, address, city, state, zip_code)
+
+    execute_update_query(mycon, sql, values)
+    mycon.close()
     
-    return "User registration successful"
+    return jsonify({"message": "User registration successful"}), 201
 
 # Update customer information
 @app.route("/user", methods=['PUT'])
 def update_user():
     data = request.get_json()
-    id = data['id']
-    email = data['email']
-    address = data['address']
-    city = data['city']
-    state = data['state']
-    zip_code = data['zip']
+    user_id, email = data['id'], data['email']
+    address, city, state, zip_code = data['address'], data['city'], data['state'], data['zip']
 
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
 
-    sql = f"UPDATE user SET email = '{email}', address = '{address}', city = '{city}', state = '{state}', zip = '{zip_code}' WHERE id = '{id}'"
-    execute_update_query(mycon, sql)
+    sql = "UPDATE user SET email = %s, address = %s, city = %s, state = %s, zip = %s WHERE id = %s"
+    values = (email, address, city, state, zip_code, user_id)
+
+    execute_update_query(mycon, sql, values)
+    mycon.close()
     
-    return "User update successful"
+    return jsonify({"message": "User update successful"}), 200
 
 # Delete a user account
 @app.route("/user", methods=['DELETE'])
 def delete_user():
     data = request.get_json()
-    id = data['id']
+    user_id = data['id']
 
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
 
-    sql = f"DELETE FROM user WHERE id = '{id}'"
-    execute_update_query(mycon, sql)
+    # Check if user exists before deleting
+    check_sql = "SELECT id FROM user WHERE id = %s"
+    if not execute_read_query(mycon, check_sql, (user_id,)):
+        return jsonify({"error": "User not found"}), 404
+
+    sql = "DELETE FROM user WHERE id = %s"
+    execute_update_query(mycon, sql, (user_id,))
+    mycon.close()
     
-    return "User deleted successfully"
+    return jsonify({"message": "User deleted successfully"}), 200
+
+# Get all users (admin)
+@app.route("/user/all", methods=['GET'])
+def get_all_users():
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+
+    sql = "SELECT id, first_name, last_name, email, address, city, state, zip FROM user"
+    users = execute_read_query(mycon, sql)
+
+    mycon.close()
+    return jsonify(users), 200
+
+# Get user by ID
+@app.route("/user/<int:id>", methods=['GET'])
+def get_user_by_id(id):
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+
+    sql = "SELECT id, first_name, last_name, email, address, city, state, zip FROM user WHERE id = %s"
+    user = execute_read_query(mycon, sql, (id,))
+
+    mycon.close()
+
+    if user:
+        return jsonify(user[0]), 200  # Return the first matching record
+    else:
+        return jsonify({"error": "User not found"}), 404
 
 
-
-app.run()
+if __name__ == "__main__":
+    app.run()
