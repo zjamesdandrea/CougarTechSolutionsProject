@@ -158,6 +158,69 @@ def delete_card():
     execute_update_query(mycon, sql)
     return "Baseball card deletion successful"
 
+#-------------------Cart CRUD------------------------------
+# Retun all cart (admin)
+@app.route("/cart/all", methods=['GET'])
+def all_carts():
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+
+    sql = """
+        SELECT c.id AS cart_id, c.user_id, u.first_name, u.last_name, 
+               b.id AS card_id, b.first_name AS card_firstname, 
+               b.last_name AS card_lastname, b.team, b.autograph, 
+               b.price, b.image_url, b.additional_specifications
+        FROM Cart c
+        JOIN Users u ON c.user_id = u.id
+        JOIN Baseball_Cards b ON c.card_id = b.id
+    """
+
+    cart_rows = execute_read_query(mycon, sql)
+    return jsonify(cart_rows)
+
+
+# Select cart by User_ID (customer)
+@app.route("/cart/", methods=['GET'])
+def select_cart():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return 'Error: No User ID provided'
+    
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    sql = f"""
+        SELECT c.id AS cart_id, c.user_id, u.first_name, u.last_name, 
+               b.id AS card_id, b.first_name AS card_firstname, 
+               b.last_name AS card_lastname, b.team, b.autograph, 
+               b.price, b.image_url, b.additional_specifications
+        FROM Cart c
+        JOIN Users u ON c.user_id = u.id
+        JOIN Baseball_Cards b ON c.card_id = b.id
+        WHERE c.user_id = {user_id}
+    """
+
+    cart_rows = execute_read_query(mycon, sql)
+    return jsonify(cart_rows)
+
+# Add cards to cart (customer)
+@app.route("/cart", methods=["POST"])
+def add_to_cart():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    cart_ids = data.get('cart_ids')  # List of card IDs
+
+    if not user_id or not cart_ids:
+        return jsonify({"error": "User ID and cart IDs are required"}), 400
+
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+
+    values = ", ".join(f"({user_id}, {card_id})" for card_id in cart_ids)
+    sql = f"INSERT INTO Cart (user_id, cart_id) VALUES {values}"
+    execute_update_query(mycon, sql)
+    return jsonify({"message": f"{len(cart_ids)} baseball cards added to cart successfully"})
+
+
 
 
 app.run()
