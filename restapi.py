@@ -159,66 +159,103 @@ def delete_card():
     return "Baseball card deletion successful"
 
 #-------------------Cart CRUD------------------------------
-# Retun all cart (admin)
-@app.route("/cart/all", methods=['GET'])
-def all_carts():
+# Create a cart for a user (customer)
+@app.route('/cart', methods=['POST'])
+def create_cart():
+    data = request.get_json()
+    user_id = data['user_id']
+
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    
+    sql = f"INSERT INTO Cart (user_id) VALUES ('{user_id}')"
+    execute_update_query(mycon, sql)
 
-    sql = """
-        SELECT c.id AS cart_id, c.user_id, u.first_name, u.last_name, 
-               b.id AS card_id, b.first_name AS card_firstname, 
-               b.last_name AS card_lastname, b.team, b.autograph, 
-               b.price, b.image_url, b.additional_specifications
-        FROM Cart c
-        JOIN Users u ON c.user_id = u.id
-        JOIN Baseball_Cards b ON c.card_id = b.id
-    """
+    return "Cart created successfully"
 
-    cart_rows = execute_read_query(mycon, sql)
-    return jsonify(cart_rows)
-
-
-# Select cart by User_ID (customer)
-@app.route("/cart/", methods=['GET'])
-def select_cart():
+# Retrieve a user's cart with items (customer)
+@app.route('/cart', methods=['GET'])
+def get_cart():
     user_id = request.args.get('user_id')
     if not user_id:
-        return 'Error: No User ID provided'
+        return 'Error: No user ID provided'
     
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+
     sql = f"""
-        SELECT c.id AS cart_id, c.user_id, u.first_name, u.last_name, 
-               b.id AS card_id, b.first_name AS card_firstname, 
-               b.last_name AS card_lastname, b.team, b.autograph, 
-               b.price, b.image_url, b.additional_specifications
-        FROM Cart c
-        JOIN Users u ON c.user_id = u.id
-        JOIN Baseball_Cards b ON c.card_id = b.id
+        SELECT ci.id AS cart_item_id, ci.cart_id, ci.baseball_card_id, ci.quantity,
+               b.first_name, b.last_name, b.team, b.autograph, b.price, b.image_url
+        FROM Cart_Items ci
+        JOIN Cart c ON ci.cart_id = c.id
+        JOIN Baseball_Cards b ON ci.baseball_card_id = b.id
         WHERE c.user_id = {user_id}
     """
+    
+    cart_items = execute_read_query(mycon, sql)
+    return jsonify(cart_items)
 
-    cart_rows = execute_read_query(mycon, sql)
-    return jsonify(cart_rows)
-
-# Add cards to cart (customer)
-@app.route("/cart", methods=["POST"])
+# Add a baseball card to a user's cart (customer)
+@app.route('/cart/item', methods=['POST'])
 def add_to_cart():
     data = request.get_json()
-    user_id = data.get('user_id')
-    cart_ids = data.get('cart_ids')  # List of card IDs
+    cart_id = data['cart_id']
+    baseball_card_id = data['baseball_card_id']
+    quantity = data.get('quantity', 1)
 
-    if not user_id or not cart_ids:
-        return jsonify({"error": "User ID and cart IDs are required"}), 400
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    
+    sql = f"""
+        INSERT INTO Cart_Items (cart_id, baseball_card_id, quantity)
+        VALUES ('{cart_id}', '{baseball_card_id}', '{quantity}')
+    """
+    execute_update_query(mycon, sql)
+    
+    return "Baseball card added to cart successfully"
+
+# Update item quantity in cart (customer)
+@app.route('/cart/item', methods=['PUT'])
+def update_cart_item():
+    data = request.get_json()
+    cart_item_id = data['cart_item_id']
+    quantity = data['quantity']
+
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    
+    sql = f"UPDATE Cart_Items SET quantity = '{quantity}' WHERE id = '{cart_item_id}'"
+    execute_update_query(mycon, sql)
+
+    return "Cart item updated successfully"
+
+# Remove an item from the cart (customer)
+@app.route('/cart/item', methods=['DELETE'])
+def remove_cart_item():
+    data = request.get_json()
+    cart_item_id = data['cart_item_id']
+
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    
+    sql = f"DELETE FROM Cart_Items WHERE id = '{cart_item_id}'"
+    execute_update_query(mycon, sql)
+
+    return "Cart item removed successfully"
+
+# Delete a user's entire cart (customer)
+@app.route('/cart', methods=['DELETE'])
+def delete_cart():
+    data = request.get_json()
+    cart_id = data['cart_id']
 
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
 
-    values = ", ".join(f"({user_id}, {card_id})" for card_id in cart_ids)
-    sql = f"INSERT INTO Cart (user_id, cart_id) VALUES {values}"
+    sql = f"DELETE FROM Cart WHERE id = '{cart_id}'"
     execute_update_query(mycon, sql)
-    return jsonify({"message": f"{len(cart_ids)} baseball cards added to cart successfully"})
+
+    return "Cart deleted successfully"
 
 
 
