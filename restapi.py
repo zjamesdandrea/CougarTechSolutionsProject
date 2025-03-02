@@ -14,14 +14,24 @@ import smtplib
 app = flask.Flask(__name__)
 app.config['DEBUG'] = True
 
+#------------------Hardcode admin credential--------------------
+admin_username = "admin"
+admin_password = "password"
+
+def is_admin(auth):
+    return auth and auth.get("username") == admin_username and auth.get("password") == admin_password
+
 #-------------------User CRUD------------------------
 # Return all users (admin)
 @app.route('/user/all', methods = ['GET'])
 def all_user():
+    auth = request.get_json()
+    if not is_admin(auth):
+        return "Error: Unauthorized"
+
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
     sql = "select * from Users"
-
     userrows = execute_read_query(mycon, sql)
     return jsonify(userrows)
 
@@ -121,11 +131,11 @@ def add_card():
     autograph = data['autograph']
     price = data['price']
     image_url = data['image_url']
-    additional_specification = data['additional_specifications']
+    additional_specifications = data['additional_specifications']
 
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = f"INSERT INTO Baseball_Cards (first_name, last_name, team, autograph, price, image_url, additional_specifications) VALUES ('{fname}', '{lname}', '{team}', '{autograph}', '{price}', '{image_url}', '{additional_specification}')"
+    sql = f"INSERT INTO Baseball_Cards (first_name, last_name, team, autograph, price, image_url, additional_specifications) VALUES ('{fname}', '{lname}', '{team}', '{autograph}', '{price}', '{image_url}', '{additional_specifications}')"
     execute_update_query(mycon, sql)
     return "Baseball card added successfully"
 
@@ -256,6 +266,8 @@ def delete_cart():
     execute_update_query(mycon, sql)
 
     return "Cart deleted successfully"
+
+#---------------Interest Form (checkout)-----------------------------
 
 
 
