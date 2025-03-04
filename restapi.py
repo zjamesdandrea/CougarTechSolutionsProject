@@ -339,9 +339,18 @@ def checkout():
     if not cart_items:
         return "Error: Cart is empty"
 
-    # Create interest form entry
-    insert_query = f"INSERT INTO Interest_Forms (user_id, timestamp) VALUES ({user_id}, NOW())"
+    # Retrieve the cart ID for the user
+    cart_id_query = f"SELECT id FROM Cart WHERE user_id = {user_id}"
+    cart = execute_read_query(mycon, cart_id_query)
+
+    if not cart:
+        return "Error: No cart found for this user"
+    cart_id = cart[0]['id']  
+
+    # Insert into Interest_Forms with both user_id and cart_id
+    insert_query = f"INSERT INTO Interest_Forms (user_id, cart_id, submitted_at) VALUES ({user_id}, {cart_id}, NOW())"
     execute_update_query(mycon, insert_query)
+
 
     # Format user details
     user_details = f"""
@@ -350,7 +359,7 @@ def checkout():
     Address: {user_info['address']}, {user_info['city']}, {user_info['state']} {user_info['zip']}
     """
 
-    # Format cart details
+    # Format cart details, will add img_url 
     card_details = "\n".join([f"{card['first_name']} {card['last_name']} ({card['team']}): ${card['price']}" for card in cart_items])
 
     # Email content
