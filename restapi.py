@@ -9,6 +9,8 @@ from sql import execute_update_query
 
 import creds
 import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 #setup an application
 app = flask.Flask(__name__)
@@ -35,7 +37,7 @@ def all_user():
     userrows = execute_read_query(mycon, sql)
     return jsonify(userrows)
 
-# Return user by ID (admin)
+# Return user by ID (admin/customer)
 @app.route("/user/", methods=['GET'])
 def select_user():
     user_id = request.args.get('id')
@@ -124,6 +126,10 @@ def select_card():
 # Add new card (admin)
 @app.route("/card", methods=["POST"])
 def add_card():
+    auth = request.get_json()
+    if not is_admin(auth):
+        return "Error: Unauthorized"
+
     data = request.get_json()
     fname = data['first_name']
     lname = data['last_name']
@@ -142,6 +148,10 @@ def add_card():
 # Update card information by ID (admin)
 @app.route("/card", methods=["PUT"])
 def update_card():
+    auth = request.get_json()
+    if not is_admin(auth):
+        return "Error: Unauthorized"
+    
     data = request.get_json()
     card_id = data['id']
     team = data['team']
@@ -159,6 +169,10 @@ def update_card():
 # Delete card by ID (admin)
 @app.route('/card', methods=['DELETE'])
 def delete_card():
+    auth = request.get_json()
+    if not is_admin(auth):
+        return "Error: Unauthorized"
+
     data = request.get_json()
     idtodelete = data['id']
 
@@ -268,8 +282,86 @@ def delete_cart():
     return "Cart deleted successfully"
 
 #---------------Interest Form (checkout)-----------------------------
+# Function: send an email using SMTP
+def send_email(to_email, subject, body):
+    sender_email = "ntuyen799@yahoo.com"    # Replace with sponsor email
+    sender_password = "kiit zuea olek hxcb"  # Generate from Yahoo Security settings
 
+    try:
+        # Setup the email
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
 
+        # Connect to Yahoo SMTP server
+        with smtplib.SMTP_SSL("smtp.mail.yahoo.com", 465) as server:  # SSL connection
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, to_email, msg.as_string())
+        
+        print(f"Email sent successfully to {to_email}")
+        return True
+
+    except Exception as e:
+        print("Email failed to send:", e)
+        return False
+
+# Checkout by sending interest form to admin email & copy to user email
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    data = request.json
+    user_id = data['user_id']
+
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+
+    # Fetch user details
+    user_query = f"SELECT first_name, last_name, email, address, city, state, zip FROM Users WHERE id = {user_id}"
+    user_info = execute_read_query(mycon, user_query)  
+
+    if not user_info:
+        return "Error: User not found"
+    user_info = user_info[0]  
+
+    # Fetch cart items
+    cart_query = f"""
+    SELECT Baseball_Cards.first_name, Baseball_Cards.last_name, 
+           Baseball_Cards.team, Baseball_Cards.price 
+    FROM Cart_Items 
+    JOIN Cart ON Cart_Items.cart_id = Cart.id 
+    JOIN Baseball_Cards ON Cart_Items.baseball_card_id = Baseball_Cards.id 
+    WHERE Cart.user_id = {user_id}
+    """
+
+    cart_items = execute_read_query(mycon, cart_query)
+
+    if not cart_items:
+        return "Error: Cart is empty"
+
+    # Create interest form entry
+    insert_query = f"INSERT INTO Interest_Forms (user_id, timestamp) VALUES ({user_id}, NOW())"
+    execute_update_query(mycon, insert_query)
+
+    # Format user details
+    user_details = f"""
+    Name: {user_info['first_name']} {user_info['last_name']}
+    Email: {user_info['email']}
+    Address: {user_info['address']}, {user_info['city']}, {user_info['state']} {user_info['zip']}
+    """
+
+    # Format cart details
+    card_details = "\n".join([f"{card['first_name']} {card['last_name']} ({card['team']}): ${card['price']}" for card in cart_items])
+
+    # Email content
+    email_body = f"User Info:\n{user_details}\n\nInterested Cards:\n{card_details}"
+    
+    # Send email to admin and customer
+    admin_email = "ntuyen799@yahoo.com"      # Replace with sponsor email
+    send_email(admin_email, "New Interest Form Submitted", email_body)
+    send_email(user_info['email'], "Interest Form Confirmation", email_body)
+
+    return "Interest form submitted successfully"
 
 
 app.run()
