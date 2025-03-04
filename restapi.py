@@ -9,6 +9,8 @@ from sql import execute_update_query
 
 import creds
 import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 #setup an application
 app = flask.Flask(__name__)
@@ -282,17 +284,28 @@ def delete_cart():
 #---------------Interest Form (checkout)-----------------------------
 # Function: send an email using SMTP
 def send_email(to_email, subject, body):
-    sender_email = "email@example.com"
-    sender_password = "email-password"
-    
+    sender_email = "ntuyen799@yahoo.com"    # Replace with sponsor email
+    sender_password = "kiit zuea olek hxcb"  # Generate from Yahoo Security settings
+
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
+        # Setup the email
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
+
+        # Connect to Yahoo SMTP server
+        with smtplib.SMTP_SSL("smtp.mail.yahoo.com", 465) as server:  # SSL connection
             server.login(sender_email, sender_password)
-            message = f"Subject: {subject}\n\n{body}"
-            server.sendmail(sender_email, to_email, message)
+            server.sendmail(sender_email, to_email, msg.as_string())
+        
+        print(f"Email sent successfully to {to_email}")
+        return True
+
     except Exception as e:
         print("Email failed to send:", e)
+        return False
 
 # Checkout by sending interest form to admin email & copy to user email
 @app.route('/checkout', methods=['POST'])
@@ -304,21 +317,25 @@ def checkout():
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
 
     # Fetch user details
-    user_query = "SELECT first_name, last_name, email, address, city, state, zip FROM Users WHERE id = %s"
+    user_query = f"SELECT first_name, last_name, email, address, city, state, zip FROM Users WHERE id = {user_id}"
     user_info = execute_read_query(mycon, user_query)  
 
-    
     if not user_info:
         return "Error: User not found"
     user_info = user_info[0]  
 
     # Fetch cart items
-    cart_query = """SELECT Baseball_Cards.first_name, Baseball_Cards.last_name, Baseball_Cards.team, Baseball_Cards.price 
-                FROM Cart 
-                JOIN Baseball_Cards ON Cart.card_id = Baseball_Cards.id 
-                WHERE Cart.user_id = {}""".format(user_id)
+    cart_query = f"""
+    SELECT Baseball_Cards.first_name, Baseball_Cards.last_name, 
+           Baseball_Cards.team, Baseball_Cards.price 
+    FROM Cart_Items 
+    JOIN Cart ON Cart_Items.cart_id = Cart.id 
+    JOIN Baseball_Cards ON Cart_Items.baseball_card_id = Baseball_Cards.id 
+    WHERE Cart.user_id = {user_id}
+    """
+
     cart_items = execute_read_query(mycon, cart_query)
-    
+
     if not cart_items:
         return "Error: Cart is empty"
 
@@ -340,7 +357,7 @@ def checkout():
     email_body = f"User Info:\n{user_details}\n\nInterested Cards:\n{card_details}"
     
     # Send email to admin and customer
-    admin_email = "admin@example.com"
+    admin_email = "ntuyen799@yahoo.com"      # Replace with sponsor email
     send_email(admin_email, "New Interest Form Submitted", email_body)
     send_email(user_info['email'], "Interest Form Confirmation", email_body)
 
