@@ -280,8 +280,71 @@ def delete_cart():
     return "Cart deleted successfully"
 
 #---------------Interest Form (checkout)-----------------------------
+# Function: send an email using SMTP
+def send_email(to_email, subject, body):
+    sender_email = "email@example.com"
+    sender_password = "email-password"
+    
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            message = f"Subject: {subject}\n\n{body}"
+            server.sendmail(sender_email, to_email, message)
+    except Exception as e:
+        print("Email failed to send:", e)
 
+# Checkout by sending interest form to admin email & copy to user email
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    data = request.json
+    user_id = data['user_id']
 
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+
+    # Fetch user details
+    user_query = "SELECT first_name, last_name, email, address, city, state, zip FROM Users WHERE id = %s"
+    user_info = execute_read_query(mycon, user_query)  
+
+    
+    if not user_info:
+        return "Error: User not found"
+    user_info = user_info[0]  
+
+    # Fetch cart items
+    cart_query = """SELECT Baseball_Cards.first_name, Baseball_Cards.last_name, Baseball_Cards.team, Baseball_Cards.price 
+                FROM Cart 
+                JOIN Baseball_Cards ON Cart.card_id = Baseball_Cards.id 
+                WHERE Cart.user_id = {}""".format(user_id)
+    cart_items = execute_read_query(mycon, cart_query)
+    
+    if not cart_items:
+        return "Error: Cart is empty"
+
+    # Create interest form entry
+    insert_query = f"INSERT INTO Interest_Forms (user_id, timestamp) VALUES ({user_id}, NOW())"
+    execute_update_query(mycon, insert_query)
+
+    # Format user details
+    user_details = f"""
+    Name: {user_info['first_name']} {user_info['last_name']}
+    Email: {user_info['email']}
+    Address: {user_info['address']}, {user_info['city']}, {user_info['state']} {user_info['zip']}
+    """
+
+    # Format cart details
+    card_details = "\n".join([f"{card['first_name']} {card['last_name']} ({card['team']}): ${card['price']}" for card in cart_items])
+
+    # Email content
+    email_body = f"User Info:\n{user_details}\n\nInterested Cards:\n{card_details}"
+    
+    # Send email to admin and customer
+    admin_email = "admin@example.com"
+    send_email(admin_email, "New Interest Form Submitted", email_body)
+    send_email(user_info['email'], "Interest Form Confirmation", email_body)
+
+    return "Interest form submitted successfully"
 
 
 app.run()
