@@ -35,7 +35,7 @@ def all_user():
     userrows = execute_read_query(mycon, sql)
     return jsonify(userrows)
 
-# Return user by ID (admin)
+# Return user by ID (admin/customer)
 @app.route("/user/", methods=['GET'])
 def select_user():
     user_id = request.args.get('id')
@@ -124,6 +124,10 @@ def select_card():
 # Add new card (admin)
 @app.route("/card", methods=["POST"])
 def add_card():
+    auth = request.get_json()
+    if not is_admin(auth):
+        return "Error: Unauthorized"
+
     data = request.get_json()
     fname = data['first_name']
     lname = data['last_name']
@@ -142,6 +146,10 @@ def add_card():
 # Update card information by ID (admin)
 @app.route("/card", methods=["PUT"])
 def update_card():
+    auth = request.get_json()
+    if not is_admin(auth):
+        return "Error: Unauthorized"
+    
     data = request.get_json()
     card_id = data['id']
     team = data['team']
@@ -159,6 +167,10 @@ def update_card():
 # Delete card by ID (admin)
 @app.route('/card', methods=['DELETE'])
 def delete_card():
+    auth = request.get_json()
+    if not is_admin(auth):
+        return "Error: Unauthorized"
+
     data = request.get_json()
     idtodelete = data['id']
 
