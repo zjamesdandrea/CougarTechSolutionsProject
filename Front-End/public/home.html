@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ICKY Buffalo Breaks Home</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Welcome to ICKY Buffalo Breaks!</h1>
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/inventory.html">View Inventory</a></li>
+        <li><a href="/contact.html">Contact Us</a></li>
+        <li><a href="/interest.html">Submit an Interest Form</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Centered Logo as Main Image -->
+  <div class="main-logo">
+    <img src="/images/icky-buffalo-breaks-logo.jpg" alt="ICKY Buffalo Breaks Logo">
+  </div>
+
+  <main>
+    <section class="intro">
+      <p>
+        ICKY Buffalo Breaks is an online platform to facilitate baseball card trading amongst a large online community. 
+        You can view our vast collection of cards. If you are interested in purchasing any of the baseball cards, 
+        please add them to your interest form with your contact information and a pitch of how much you are willing 
+        to buy the card(s) for. All prices are negotiated with the owner, Trako Saluskin.
+      </p>
+
+      <p>
+        Join our community on 
+        <a href="https://www.instagram.com/ickybuffalo_breaks" target="_blank">Instagram</a>
+        to follow the latest additions to our collection and current activity in our community.
+      </p>
+    </section>
+  </main>
+
+  <div class="auth-buttons">
+    <a href="/signin.html" class="btn">Sign-In</a>
+    <a href="/createaccount.html" class="btn">Create Account</a>
+  </div>
+  <br><br><br>
+
+  <footer>
+    <div class="footer-content">
+      <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
+    </div>
+  </footer>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const response = await fetch("/check-auth");
+        const data = await response.json();
+
+        if (data.isAuthenticated) {
+            document.getElementById("signin-link").style.display = "none";
+            document.getElementById("createaccount-link").style.display = "none";
+            document.getElementById("logout-link").style.display = "block";
+            document.getElementById("user-info").style.display = "block";
+            document.getElementById("username").textContent = data.user.name;
+        }
+    });
+</script>
+</body>
+</html>
