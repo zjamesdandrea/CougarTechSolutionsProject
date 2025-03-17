@@ -16,39 +16,57 @@ from email.mime.multipart import MIMEMultipart
 app = flask.Flask(__name__)
 app.config['DEBUG'] = True
 
-#------------------Hardcode admin credential--------------------
-admin_username = "admin"
-admin_password = "password"
+# ------------------ User Login --------------------
+@app.route('/login', methods=['POST'])
+def login():
+    auth = request.get_json()
 
-def is_admin(auth):
-    return auth and auth.get("username") == admin_username and auth.get("password") == admin_password
+    if not auth or not auth.get('email') or not auth.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    email = auth.get('email')
+    password = auth.get('password')
+
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    user = execute_read_query(mycon, sql) 
+
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user": user[0]  # Returning the first matching user
+    }), 200
 
 #-------------------User CRUD------------------------
 # Return all users (admin)
-@app.route('/user/all', methods = ['GET'])
+@app.route('/user/all', methods=['GET'])
 def all_user():
+    #login in user
     auth = request.get_json()
-    if not is_admin(auth):
-        return "Error: Unauthorized"
-
-    mycreds = creds.myCreds()
-    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = "select * from Users"
-    userrows = execute_read_query(mycon, sql)
-    return jsonify(userrows)
-
-# Return user by ID (admin/customer)
-@app.route("/user/", methods=['GET'])
-def select_user():
-    user_id = request.args.get('id')
-    if not user_id:
-        return 'Error: No ID provided'
+    if not auth or not auth.get('email') or not auth.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
     
+    email = auth.get('email')
+    password = auth.get('password')
+
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = f"select * from Users where id = {user_id}"
-    userrows = execute_read_query(mycon, sql)
-    return jsonify(userrows)
+    user = execute_read_query(mycon, sql)  
+
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+    
+    if user[0]['role'] == 'admin':
+        # If user is an admin, return all users
+        sql = "SELECT * FROM Users"
+        userrows = execute_read_query(mycon, sql)  
+        return jsonify(userrows), 200
+    else:
+        return jsonify({"message": "Error: Unauthorized"}), 403
 
 # Register user (customer)
 @app.route("/user", methods=['POST'])
@@ -73,34 +91,74 @@ def add_user():
 # Update user info by ID (customer)
 @app.route("/user", methods=['PUT'])
 def update_user():
+    #login in user
+    auth = request.get_json()
+    if not auth or not auth.get('email') or not auth.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    email = auth.get('email')
+    password = auth.get('password')
+
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    user = execute_read_query(mycon, sql)  
+
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+    
     data = request.get_json()
-    user_id = data['id']
-    email = data['email']
+    new_email = data.get('new_email')
+    new_password = data.get('new_password')
     address = data['address']
     city = data['city']
     state = data['state']
     zip = data['zip']
 
-    mycreds = creds.myCreds()
-    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = f"UPDATE Users SET email = '{email}', address = '{address}', city = '{city}', state = '{state}', zip = '{zip}' WHERE id = '{user_id}'"
-    execute_update_query(mycon, sql)
-    return "User information update successful"
+    if not any([new_email, new_password, address, city, state, zip]):     # Ensure there is at least one field to update
+        return jsonify({"message": "No data to update"}), 400 
+
+    # If the user wants to change email or password, ensure that they provide at least one of them
+    if new_email:
+        sql_update_email = f"UPDATE Users SET email = '{new_email}' WHERE email = '{email}'"
+        execute_update_query(mycon, sql_update_email)
+        email = new_email  # Update email for further checks and updates
+    
+    if new_password:
+        sql_update_password = f"UPDATE Users SET password = '{new_password}' WHERE email = '{email}'"
+        execute_update_query(mycon, sql_update_password)
+
+    # SQL to update address, city, state, and zip
+    sql_update_info = f"UPDATE Users SET address = '{address}', city = '{city}', state = '{state}', zip = '{zip}' WHERE email = '{email}'"
+    execute_update_query(mycon, sql_update_info)
+
+    return jsonify({"message": "User information update successful"})
 
 # Delelte user by ID (customer)
 @app.route('/user', methods=['DELETE'])
 def delete_user():
-    data = request.get_json()
-    idtodelete = data['id']
+    #login in user
+    auth = request.get_json()
+    if not auth or not auth.get('email') or not auth.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    email = auth.get('email')
+    password = auth.get('password')
 
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    sql = f"delete from Users where id = '{idtodelete}'"
+    user = execute_read_query(mycon, sql)  
+
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    sql = f"delete from Users where  = '{email}'"
     execute_update_query(mycon, sql)
     return "User deletion successful"
 
 #---------------------Card CRUD----------------------------
-# Retun all baseball cards (customer/admin)
+# Retun all baseball cards 
 @app.route('/card/all', methods = ['GET'])
 def all_card():
     mycreds = creds.myCreds()
@@ -110,7 +168,7 @@ def all_card():
     userrows = execute_read_query(mycon, sql)
     return jsonify(userrows)
 
-# Select card by ID (customer/admin)
+# Select card by ID 
 @app.route("/card/", methods=['GET'])
 def select_card():
     card_id = request.args.get('id')
@@ -126,9 +184,23 @@ def select_card():
 # Add new card (admin)
 @app.route("/card", methods=["POST"])
 def add_card():
+    #login in user
     auth = request.get_json()
-    if not is_admin(auth):
-        return "Error: Unauthorized"
+    if not auth or not auth.get('email') or not auth.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    email = auth.get('email')
+    password = auth.get('password')
+
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    user = execute_read_query(mycon, sql)  
+
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+    if user[0]['role'] != 'admin':
+        return jsonify({"message": "Error: Unauthorized"}), 403  
 
     data = request.get_json()
     fname = data['first_name']
@@ -139,8 +211,6 @@ def add_card():
     image_url = data['image_url']
     additional_specifications = data['additional_specifications']
 
-    mycreds = creds.myCreds()
-    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
     sql = f"INSERT INTO Baseball_Cards (first_name, last_name, team, autograph, price, image_url, additional_specifications) VALUES ('{fname}', '{lname}', '{team}', '{autograph}', '{price}', '{image_url}', '{additional_specifications}')"
     execute_update_query(mycon, sql)
     return "Baseball card added successfully"
@@ -148,9 +218,23 @@ def add_card():
 # Update card information by ID (admin)
 @app.route("/card", methods=["PUT"])
 def update_card():
+    #login in user
     auth = request.get_json()
-    if not is_admin(auth):
-        return "Error: Unauthorized"
+    if not auth or not auth.get('email') or not auth.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    email = auth.get('email')
+    password = auth.get('password')
+
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    user = execute_read_query(mycon, sql)  
+
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+    if user[0]['role'] != 'admin':
+        return jsonify({"message": "Error: Unauthorized"}), 403
     
     data = request.get_json()
     card_id = data['id']
@@ -160,8 +244,6 @@ def update_card():
     image_url = data['image_url']
     additional_specifications = data['additional_specifications']
 
-    mycreds = creds.myCreds()
-    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
     sql = f"UPDATE Baseball_Cards SET team = '{team}', autograph = '{autograph}', price = '{price}', image_url = '{image_url}', additional_specifications = '{additional_specifications}' WHERE id = '{card_id}'"
     execute_update_query(mycon, sql)
     return "Baseball card updated successfully"
@@ -169,15 +251,27 @@ def update_card():
 # Delete card by ID (admin)
 @app.route('/card', methods=['DELETE'])
 def delete_card():
+    #login in user
     auth = request.get_json()
-    if not is_admin(auth):
-        return "Error: Unauthorized"
+    if not auth or not auth.get('email') or not auth.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
+    
+    email = auth.get('email')
+    password = auth.get('password')
+
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
+    mycreds = creds.myCreds()
+    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
+    user = execute_read_query(mycon, sql)  
+
+    if not user:
+        return jsonify({"message": "Invalid credentials"}), 401
+    if user[0]['role'] != 'admin':
+        return jsonify({"message": "Error: Unauthorized"}), 403
 
     data = request.get_json()
     idtodelete = data['id']
 
-    mycreds = creds.myCreds()
-    mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
     sql = f"delete from Baseball_Cards where id = '{idtodelete}'"
     execute_update_query(mycon, sql)
     return "Baseball card deletion successful"
@@ -345,7 +439,8 @@ def checkout():
 
     if not cart:
         return "Error: No cart found for this user"
-    cart_id = cart[0]['id']  
+
+    cart_id = cart[0]['id']  # Extract cart ID from query result
 
     # Insert into Interest_Forms with both user_id and cart_id
     insert_query = f"INSERT INTO Interest_Forms (user_id, cart_id, submitted_at) VALUES ({user_id}, {cart_id}, NOW())"
