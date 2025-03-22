@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventory - ICKY Buffalo Breaks</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<script>
+    
+  document.addEventListener("DOMContentLoaded", async () => {
+    const inventoryList = document.querySelector(".inventory-list");
+
+    try {
+        const response = await fetch("/card/all"); // Fetch from backend
+        const items = await response.json();
+
+        if (items.length === 0) {
+            inventoryList.innerHTML = "<p>No items available.</p>";
+            return;
+        }
+
+        inventoryList.innerHTML = items.map(item => `
+            <div class="inventory-item">
+                <img src="${item.image_url}" alt="${item.name}">
+                <h3>${item.name}</h3>
+                <p>Price: $${item.price}</p>
+                <p>Rarity: ${item.rarity}</p>
+            </div>
+        `).join("");
+    } catch (error) {
+        inventoryList.innerHTML = "<p>Error loading inventory.</p>";
+        console.error("Error fetching inventory:", error);
+    }
+});
+  
+</script>
+<body>
+  <header>
+    <h1>Inventory</h1>
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/inventory.html">View Inventory</a></li>
+        <li><a href="/contact.html">Contact Us</a></li>
+        <li><a href="/interest.html">Submit an Interest Form</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="inventory-controls">
+      <input type="text" id="search-bar" placeholder="Search cards...">
+      
+      <label for="sort-options">Sort by:</label>
+      <select id="sort-options">
+        <option value="name">Name</option>
+        <option value="price">Price</option>
+        <option value="rarity">Rarity</option>
+      </select>
+
+      <fieldset>
+        <legend>Filter by:</legend>
+        <label><input type="checkbox" name="filter" value="filter1"> Template Filter 1</label>
+        <label><input type="checkbox" name="filter" value="filter2"> Template Filter 2</label>
+        <label><input type="checkbox" name="filter" value="filter3"> Template Filter 3</label>
+      </fieldset>
+    </section>
+
+    <section class="inventory-list">
+      <p>Loading inventory...</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-content">
+      <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
+    </div>
+  </footer>
+</body>
+</html>
