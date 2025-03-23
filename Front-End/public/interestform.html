@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="C:\Users\HP\Desktop\Spring 2025\CIS 4375\Code\CougarTechSolutionsProject\Front-End\public\style.css">
+    <title>Interest Form</title>
+    <style>
+        label {
+            font-weight: bold; /* Makes labels bold */
+            display: block; /* Ensures labels appear above the input fields */
+            margin-bottom: 5px;
+        }
+        input, textarea, button {
+            margin-bottom: 15px; /* Adds space between elements */
+        }
+        input[type="text"], input[type="email"], textarea {
+            width: 100%; /* Makes input fields stretch to full width */
+            font-size: 1.2rem; /* Makes the text boxes larger */
+            padding: 10px; /* Adds padding for better usability */
+        }
+        textarea {
+            resize: vertical; /* Allows vertical resizing only */
+        }
+        button {
+            background-color: #006400; /* Dark green color */
+            color: white;
+            padding: 15px 30px; /* Increases size of the button */
+            font-size: 1.2rem; /* Larger font for the button */
+            border: none;
+            cursor: pointer;
+            border-radius: 5px; /* Adds rounded corners */
+        }
+        button:hover {
+            background-color: #004d00; /* Slightly darker green on hover */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Interest Form</h1>
+    </header>
+    <div class="container">
+        <form action="[your_form_processing_script]" method="post">
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+
+            <label for="email">Email Address:</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+
+            <label for="interests">Your Interests:</label>
+            <textarea id="interests" name="interests" rows="4" placeholder="Tell us about your interests"></textarea>
+
+            <label for="contact-method">Preferred Method of Contact:</label>
+            <input type="radio" id="contact-email" name="contact-method" value="email" checked>
+            <label for="contact-email">Email</label>
+            <input type="radio" id="contact-phone" name="contact-method" value="phone">
+            <label for="contact-phone">Phone</label>
+
+            <label for="newsletter">Subscribe to Newsletter:</label>
+            <input type="checkbox" id="newsletter" name="newsletter">
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>
