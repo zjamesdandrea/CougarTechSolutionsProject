@@ -5,35 +5,6 @@
   <title>Inventory - ICKY Buffalo Breaks</title>
   <link rel="stylesheet" href="/style.css">
 </head>
-<script>
-    
-  document.addEventListener("DOMContentLoaded", async () => {
-    const inventoryList = document.querySelector(".inventory-list");
-
-    try {
-        const response = await fetch("/card/all"); // Fetch from backend
-        const items = await response.json();
-
-        if (items.length === 0) {
-            inventoryList.innerHTML = "<p>No items available.</p>";
-            return;
-        }
-
-        inventoryList.innerHTML = items.map(item => `
-            <div class="inventory-item">
-                <img src="${item.image_url}" alt="${item.name}">
-                <h3>${item.name}</h3>
-                <p>Price: $${item.price}</p>
-                <p>Rarity: ${item.rarity}</p>
-            </div>
-        `).join("");
-    } catch (error) {
-        inventoryList.innerHTML = "<p>Error loading inventory.</p>";
-        console.error("Error fetching inventory:", error);
-    }
-});
-  
-</script>
 <body>
   <header>
     <h1>Inventory</h1>
@@ -48,22 +19,27 @@
     </nav>
   </header>
 
+  <!-- Centered Logo as Main Image -->
+  <div class="main-logo">
+    <img src="/images/icky-buffalo-breaks-logo.jpg" alt="ICKY Buffalo Breaks Logo">
+  </div>
+
   <main>
     <section class="inventory-controls">
       <input type="text" id="search-bar" placeholder="Search cards...">
-      
-      <label for="sort-options">Sort by:</label>
-      <select id="sort-options">
-        <option value="name">Name</option>
-        <option value="price">Price</option>
-        <option value="rarity">Rarity</option>
+
+      <label for="sort">Sort by:</label>
+      <select id="sort">
+        <option value="name">Name (A-Z)</option>
+        <option value="price-low">Price (Low to High)</option>
+        <option value="price-high">Price (High to Low)</option>
       </select>
 
+      <!-- Updated Filter Section: Autograph Only -->
       <fieldset>
-        <legend>Filter by:</legend>
-        <label><input type="checkbox" name="filter" value="filter1"> Template Filter 1</label>
-        <label><input type="checkbox" name="filter" value="filter2"> Template Filter 2</label>
-        <label><input type="checkbox" name="filter" value="filter3"> Template Filter 3</label>
+        <legend>Filter by Autograph:</legend>
+        <label><input type="checkbox" id="filter-autograph"> Autographed</label>
+        <label><input type="checkbox" id="filter-non-autograph"> Not Autographed</label>
       </fieldset>
     </section>
 
@@ -77,5 +53,141 @@
       <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
     </div>
   </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const inventoryList = document.querySelector(".inventory-list");
+        const sortSelect = document.getElementById("sort");
+        const searchBar = document.getElementById("search-bar");
+        const filterAutograph = document.getElementById("filter-autograph");
+        const filterNonAutograph = document.getElementById("filter-non-autograph");
+        const paginationContainer = document.createElement("div");
+        paginationContainer.classList.add("pagination");
+        inventoryList.after(paginationContainer);
+
+        let items = []; // Store fetched data
+        let currentPage = 1;
+        const itemsPerPage = 10; // Cards per page
+
+        async function fetchInventory() {
+            try {
+                const response = await fetch("/card/all");
+                items = await response.json();
+
+                if (!Array.isArray(items) || items.length === 0) {
+                    inventoryList.innerHTML = "<p>No items available.</p>";
+                    return;
+                }
+
+                renderInventory();
+            } catch (error) {
+                inventoryList.innerHTML = "<p>Error loading inventory.</p>";
+                console.error("Error fetching inventory:", error);
+            }
+        }
+
+        function renderInventory() {
+            let filteredItems = [...items];
+
+            // Apply search filter
+            const searchTerm = searchBar.value.toLowerCase();
+            filteredItems = filteredItems.filter(item =>
+                `${item.first_name} ${item.last_name}`.toLowerCase().includes(searchTerm)
+            );
+
+            // Apply autograph filter
+            const autographFilter = filterAutograph.checked;
+            const nonAutographFilter = filterNonAutograph.checked;
+
+            if (autographFilter && !nonAutographFilter) {
+                filteredItems = filteredItems.filter(item => item.autograph === true);
+            } else if (!autographFilter && nonAutographFilter) {
+                filteredItems = filteredItems.filter(item => item.autograph === false);
+            } 
+            // If both are unchecked, show all cards (no filtering)
+
+            // Apply sorting
+            const sortBy = sortSelect.value;
+            if (sortBy === "name") {
+                filteredItems.sort((a, b) => 
+                    (a.first_name + " " + a.last_name).localeCompare(b.first_name + " " + b.last_name)
+                );
+            } else if (sortBy === "price-low") {
+                filteredItems.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+            } else if (sortBy === "price-high") {
+                filteredItems.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+            }
+
+            // Implement pagination
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedItems = filteredItems.slice(start, end);
+
+            // Display items
+            inventoryList.innerHTML = paginatedItems.map(item => `
+                <div class="inventory-item">
+                    <img src="${item.image_url || '/images/placeholder.jpg'}" alt="${item.first_name} ${item.last_name}">
+                    <h3>${item.first_name} ${item.last_name}</h3>
+                    <p>Team: ${item.team}</p>
+                    <p>Autograph: ${item.autograph ? "Yes" : "No"}</p>
+                    <p>Price: $${item.price}</p>
+                    <p>Details: ${item.additional_specifications || 'N/A'}</p>
+                </div>
+            `).join("");
+
+            renderPagination(filteredItems.length);
+        }
+
+        function renderPagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            paginationContainer.innerHTML = "";
+
+            if (totalPages <= 1) return;
+
+            // Previous Button
+            if (currentPage > 1) {
+                const prevButton = document.createElement("button");
+                prevButton.textContent = "Previous";
+                prevButton.addEventListener("click", () => {
+                    currentPage--;
+                    renderInventory();
+                });
+                paginationContainer.appendChild(prevButton);
+            }
+
+            // Page Numbers
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = document.createElement("button");
+                pageButton.textContent = i;
+                if (i === currentPage) pageButton.disabled = true;
+                pageButton.addEventListener("click", () => {
+                    currentPage = i;
+                    renderInventory();
+                });
+                paginationContainer.appendChild(pageButton);
+            }
+
+            // Next Button
+            if (currentPage < totalPages) {
+                const nextButton = document.createElement("button");
+                nextButton.textContent = "Next";
+                nextButton.addEventListener("click", () => {
+                    currentPage++;
+                    renderInventory();
+                });
+                paginationContainer.appendChild(nextButton);
+            }
+        }
+
+        // Event Listeners
+        sortSelect.addEventListener("change", () => { currentPage = 1; renderInventory(); });
+        searchBar.addEventListener("input", () => { currentPage = 1; renderInventory(); });
+        filterAutograph.addEventListener("change", () => { currentPage = 1; renderInventory(); });
+        filterNonAutograph.addEventListener("change", () => { currentPage = 1; renderInventory(); });
+
+        // Fetch inventory on page load
+        fetchInventory();
+    });
+  </script>
 </body>
 </html>

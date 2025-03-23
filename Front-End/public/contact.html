@@ -19,12 +19,18 @@
     </nav>
   </header>
 
+  <!-- Centered Logo as Main Image -->
+  <div class="main-logo">
+    <img src="/images/icky-buffalo-breaks-logo.jpg" alt="ICKY Buffalo Breaks Logo">
+  </div>
+
   <main>
     <section class="contact-info">
       <h2>Get in Touch</h2>
       <p>Have any questions? Reach out to us using the contact form below or via email.</p>
 
-      <form action="/send-message" method="POST">
+      <!-- FIXED: Added id="contactForm" -->
+      <form id="contactForm">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required>
         
@@ -37,6 +43,9 @@
         <button type="submit">Send Message</button>
       </form>
 
+      <!-- FIXED: Added a placeholder for response message -->
+      <p id="responseMessage"></p>
+
       <h3>Email</h3>
       <p><a href="mailto:contact@ickybuffalobreaks.com">contact@ickybuffalobreaks.com</a></p>
       
@@ -44,6 +53,8 @@
       <p>
         Join our community on 
         <a href="https://www.instagram.com/ickybuffalo_breaks" target="_blank">Instagram</a>
+        <a href="https://www.facebook.com/ickybuffalo_breaks" target="_blank">Facebook</a>
+        <a href="https://www.tiktok.com/@ickybuffalo_breaks" target="_blank">TikTok</a>
       </p>
     </section>
   </main>
@@ -53,5 +64,33 @@
       <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
     </div>
   </footer>
+
+  <script>
+    document.getElementById("contactForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const responseMessage = document.getElementById("responseMessage");
+
+        try {
+            const response = await fetch("/api/contact", {
+                method: "POST",
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: { "Content-Type": "application/json" }
+            });
+
+            const result = await response.json();
+            responseMessage.textContent = result.message;
+            responseMessage.style.color = response.ok ? "green" : "red";
+
+            if (response.ok) {
+                this.reset(); // Clear form on success
+            }
+        } catch (error) {
+            responseMessage.textContent = "Error sending message. Please try again.";
+            responseMessage.style.color = "red";
+        }
+    });
+  </script>
+
 </body>
 </html>
