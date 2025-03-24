@@ -1,0 +1,217 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Baseball Cards</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    input, button, select, textarea {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+    }
+
+    form {
+      margin-bottom: 30px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .form-columns {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .form-columns section {
+      flex: 1;
+      min-width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Welcome to ICKY Buffalo Breaks!</h1>
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/inventory.html">View Inventory</a></li>
+        <li><a href="/contact.html">Contact Us</a></li>
+        <li><a href="/interest.html">Submit an Interest Form</a></li>
+        <li><a href="/manage-cards.html">Manage Cards</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main style="padding: 20px;">
+    <h2>Manage Baseball Cards</h2>
+
+    <!-- View All Cards -->
+    <section>
+      <h3>All Baseball Cards</h3>
+      <table id="cards-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Team</th>
+            <th>Autograph</th>
+            <th>Price</th>
+            <th>Image</th>
+            <th>Specs</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <div class="form-columns">
+      <!-- Create Card -->
+      <section>
+        <h3>Create New Card</h3>
+        <form id="create-form">
+          <input name="first_name" placeholder="Player First Name" required>
+          <input name="last_name" placeholder="Player Last Name" required>
+          <input name="team" placeholder="Team" required>
+          <input name="autograph" placeholder="Autograph (yes/no)" required>
+          <input name="price" type="number" placeholder="Price" required>
+          <input name="image_url" placeholder="Image URL (optional)">
+          <textarea name="additional_specifications" placeholder="Additional Specifications"></textarea>
+          <button type="submit">Add Card</button>
+        </form>
+      </section>
+
+      <!-- Update Card -->
+      <section>
+        <h3>Update Existing Card</h3>
+        <form id="update-form">
+          <input name="id" placeholder="Card ID (required)" required>
+          <input name="first_name" placeholder="New First Name (optional)">
+          <input name="last_name" placeholder="New Last Name (optional)">
+          <input name="team" placeholder="New Team (optional)">
+          <input name="autograph" placeholder="New Autograph (optional)">
+          <input name="price" type="number" placeholder="New Price (optional)">
+          <input name="image_url" placeholder="New Image URL (optional)">
+          <textarea name="additional_specifications" placeholder="New Specifications (optional)"></textarea>
+          <button type="submit">Update Card</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Delete Card -->
+    <section>
+      <h3>Delete Card</h3>
+      <form id="delete-form">
+        <input name="id" placeholder="Card ID to Delete" required>
+        <button type="submit">Delete Card</button>
+      </form>
+    </section>
+  </main>
+
+  <div class="auth-buttons">
+    <a href="/logout" class="btn" id="logout-link" style="display:none;">Log Out</a>
+    <div id="user-info" style="display:none;">Welcome, <span id="username"></span>!</div>
+  </div>
+
+  <footer>
+    <div class="footer-content">
+      <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script>
+    async function loadCards() {
+      const res = await fetch('/card/all');
+      const cards = await res.json();
+      const tbody = document.querySelector('#cards-table tbody');
+      tbody.innerHTML = '';
+      cards.forEach(card => {
+        const row = `
+          <tr>
+            <td>${card.id}</td>
+            <td>${card.first_name} ${card.last_name}</td>
+            <td>${card.team}</td>
+            <td>${card.autograph}</td>
+            <td>$${card.price}</td>
+            <td>${card.image_url ? `<img src="${card.image_url}" width="60" />` : 'No Image'}</td>
+            <td>${card.additional_specifications}</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+    }
+
+    document.getElementById('create-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = Object.fromEntries(new FormData(e.target));
+      const res = await fetch('/card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      alert(await res.text());
+      loadCards();
+    });
+
+    document.getElementById('update-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const json = {};
+
+      // Always include the ID
+      json.id = formData.get('id');
+
+      // Only include fields that aren't empty
+      ['first_name', 'last_name', 'team', 'autograph', 'price', 'image_url', 'additional_specifications'].forEach(field => {
+        const value = formData.get(field)?.trim();
+        if (value !== '') {
+          json[field] = field === 'price' ? parseFloat(value) : value;
+        }
+      });
+
+      const res = await fetch('/card', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(json)
+      });
+
+      alert(await res.text());
+      loadCards();
+    });
+
+    document.getElementById('delete-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = Object.fromEntries(new FormData(e.target));
+      const res = await fetch('/card', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      alert(await res.text());
+      loadCards();
+    });
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const response = await fetch("/check-auth");
+      const data = await response.json();
+
+      if (data.isAuthenticated) {
+        document.getElementById("logout-link").style.display = "inline-block";
+        document.getElementById("user-info").style.display = "inline-block";
+        document.getElementById("username").textContent = data.user.name;
+      }
+
+      loadCards();
+    });
+  </script>
+</body>
+</html>

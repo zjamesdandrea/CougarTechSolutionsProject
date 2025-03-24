@@ -3,34 +3,23 @@ const path = require("path");
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+const MySQLStore = require("express-mysql-session")(session);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.json()); // Parse JSON body requests
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public"))); // Serve static files
-
-// Session configuration (to track user login)
-app.use(
-  session({
-    secret: "secret-key",
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }, // Change to true in production with HTTPS
-  })
-);
-
-// 🛠 MySQL Database Connection (Based on Python `creds.py`)
-const db = mysql.createConnection({
+// MySQL DB config
+const dbConfig = {
   host: "cougartechdb.cyptvgckm417.us-east-1.rds.amazonaws.com",
   user: "admin",
   password: "cougartech1290",
-  database: "ICKYBuffaloBreaks",
-});
+  database: "ICKYBuffaloBreaks"
+};
 
-// Connect to database
+// Create MySQL connection
+const db = mysql.createConnection(dbConfig);
+
+// Connect to DB
 db.connect((err) => {
   if (err) {
     console.error("Database connection failed:", err);
@@ -39,88 +28,80 @@ db.connect((err) => {
   }
 });
 
-// Hash Password Function (Used for Secure Registration)
+// Set up session store
+const sessionStore = new MySQLStore(dbConfig);
+
+app.use(
+  session({
+    secret: "secret-key", // Use a stronger secret in production
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: { secure: false } // Set to true if using HTTPS
+  })
+);
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
+
+// Password helpers
 const hashPassword = async (password) => {
   return await bcrypt.hash(password, 10);
 };
 
-// Verify Password Function (Used for Login)
 const verifyPassword = async (password, hashedPassword) => {
   return await bcrypt.compare(password, hashedPassword);
 };
 
-// Serve the home page when accessing "/"
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "home.html"));
-});
+// --------------- Routes ------------------
 
-// Serve the Sign-In page
-app.get("/signin.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "signin.html"));
-});
+// Home & Auth Pages
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
+app.get("/signin.html", (req, res) => res.sendFile(path.join(__dirname, "public", "signin.html")));
+app.get("/createaccount.html", (req, res) => res.sendFile(path.join(__dirname, "public", "createaccount.html")));
 
-// Serve the Create Account page
-app.get("/createaccount.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "createaccount.html"));
-});
-
-// Register New User
+// Register User
 app.post("/user", async (req, res) => {
   const { first_name, last_name, email, password, address, city, state, zip } = req.body;
 
   try {
-    // Check if email already exists
     const [existingUser] = await db.promise().query("SELECT * FROM Users WHERE email = ?", [email]);
-    if (existingUser.length > 0) {
-      return res.status(400).send("Email already registered.");
-    }
+    if (existingUser.length > 0) return res.status(400).send("Email already registered.");
 
-    // Hash the password before storing it
     const hashedPassword = await hashPassword(password);
-
-    // Insert new user into the database
-    const sql =
-      "INSERT INTO Users (first_name, last_name, email, password, address, city, state, zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    const sql = "INSERT INTO Users (first_name, last_name, email, password, address, city, state, zip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     await db.promise().query(sql, [first_name, last_name, email, hashedPassword, address, city, state, zip]);
 
     res.status(201).send("User registration successful!");
-  } catch (error) {
-    console.error("Error during registration:", error);
-    res.status(500).send("Error registering user.");
+  } catch (err) {
+    console.error("Registration error:", err);
+    res.status(500).send("Server error.");
   }
 });
 
-// User Login Route
+// Login User
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Fetch user from the database
     const [users] = await db.promise().query("SELECT * FROM Users WHERE email = ?", [email]);
-
-    if (users.length === 0) {
-      return res.status(401).send("Invalid email or password.");
-    }
+    if (users.length === 0) return res.status(401).send("Invalid email or password.");
 
     const user = users[0];
-
-    // Compare the entered password with the hashed password in the database
     const isMatch = await verifyPassword(password, user.password);
-    if (!isMatch) {
-      return res.status(401).send("Invalid email or password.");
-    }
+    if (!isMatch) return res.status(401).send("Invalid email or password.");
 
-    // Store user session after successful login
-    req.session.user = { id: user.id, email: user.email, name: user.first_name };
-
+    req.session.user = { id: user.id, email: user.email, name: user.first_name, role: user.role };
     res.status(200).send("Login successful");
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).send("Internal server error");
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).send("Server error.");
   }
 });
 
-// Check if User is Logged In
+// Check Auth
 app.get("/check-auth", (req, res) => {
   if (req.session.user) {
     res.json({ isAuthenticated: true, user: req.session.user });
@@ -129,14 +110,81 @@ app.get("/check-auth", (req, res) => {
   }
 });
 
-// User Logout Route
+// Logout
 app.get("/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.redirect("/");
-  });
+  req.session.destroy(() => res.redirect("/"));
 });
 
-// Starts the Server
+// ----------------- Card CRUD ------------------
+
+// Create Card
+app.post("/card", async (req, res) => {
+  const { first_name, last_name, team, autograph, price, image_url, additional_specifications } = req.body;
+
+  try {
+    const sql = "INSERT INTO Baseball_Cards (first_name, last_name, team, autograph, price, image_url, additional_specifications) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    await db.promise().query(sql, [first_name, last_name, team, autograph, price, image_url, additional_specifications]);
+    res.status(201).send("Card added successfully!");
+  } catch (err) {
+    console.error("Add card error:", err);
+    res.status(500).send("Error adding card.");
+  }
+});
+
+// Update Card
+app.put("/card", async (req, res) => {
+  const { id, team, autograph, price, image_url, additional_specifications } = req.body;
+
+  try {
+    const sql = "UPDATE Baseball_Cards SET team = ?, autograph = ?, price = ?, image_url = ?, additional_specifications = ? WHERE id = ?";
+    await db.promise().query(sql, [team, autograph, price, image_url, additional_specifications, id]);
+    res.status(200).send("Card updated successfully!");
+  } catch (err) {
+    console.error("Update card error:", err);
+    res.status(500).send("Error updating card.");
+  }
+});
+
+// Delete Card
+app.delete("/card", async (req, res) => {
+  const { id } = req.body;
+
+  try {
+    const sql = "DELETE FROM Baseball_Cards WHERE id = ?";
+    await db.promise().query(sql, [id]);
+    res.status(200).send("Card deleted successfully!");
+  } catch (err) {
+    console.error("Delete card error:", err);
+    res.status(500).send("Error deleting card.");
+  }
+});
+
+// Get Single Card by ID
+app.get("/card", async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    const [result] = await db.promise().query("SELECT * FROM Baseball_Cards WHERE id = ?", [id]);
+    if (result.length === 0) return res.status(404).send("Card not found.");
+    res.json(result[0]);
+  } catch (err) {
+    console.error("Get card error:", err);
+    res.status(500).send("Error fetching card.");
+  }
+});
+
+// Get All Cards
+app.get("/card/all", async (req, res) => {
+  try {
+    const [cards] = await db.promise().query("SELECT * FROM Baseball_Cards");
+    res.json(cards);
+  } catch (err) {
+    console.error("Get all cards error:", err);
+    res.status(500).send("Error fetching cards.");
+  }
+});
+
+// Start Server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
