@@ -4,6 +4,38 @@
   <meta charset="UTF-8">
   <title>Contact Us - ICKY Buffalo Breaks</title>
   <link rel="stylesheet" href="/style.css">
+  <style>
+    .socials-container {
+      text-align: center;
+      margin-top: 50px;
+    }
+    .socials-container h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .social-links a {
+      display: inline-block;
+      margin: 10px;
+      font-size: 20px;
+      text-decoration: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background-color: #28a745; /* Matching nav bar */
+      transition: 0.3s;
+    }
+    .social-links a:hover {
+      background-color: #1b1914;
+    }
+    .message {
+      font-size: 18px;
+      margin-top: 20px;
+    }
+    .email {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -19,44 +51,20 @@
     </nav>
   </header>
 
-  <!-- Centered Logo as Main Image -->
+  <!-- Centered Logo -->
   <div class="main-logo">
     <img src="/images/icky-buffalo-breaks-logo.jpg" alt="ICKY Buffalo Breaks Logo">
   </div>
 
-  <main>
-    <section class="contact-info">
-      <h2>Get in Touch</h2>
-      <p>Have any questions? Reach out to us using the contact form below or via email.</p>
-
-      <!-- FIXED: Added id="contactForm" -->
-      <form id="contactForm">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
-        
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
-        
-        <label for="message">Message:</label>
-        <textarea id="message" name="message" rows="5" required></textarea>
-        
-        <button type="submit">Send Message</button>
-      </form>
-
-      <!-- FIXED: Added a placeholder for response message -->
-      <p id="responseMessage"></p>
-
-      <h3>Email</h3>
-      <p><a href="mailto:contact@ickybuffalobreaks.com">contact@ickybuffalobreaks.com</a></p>
-      
-      <h3>Follow Us</h3>
-      <p>
-        Join our community on 
-        <a href="https://www.instagram.com/ickybuffalo_breaks" target="_blank">Instagram</a>
-        <a href="https://www.facebook.com/ickybuffalo_breaks" target="_blank">Facebook</a>
-        <a href="https://www.tiktok.com/@ickybuffalo_breaks" target="_blank">TikTok</a>
-      </p>
-    </section>
+  <main class="socials-container">
+    <h2>Connect with Us on Social Media</h2>
+    <div class="social-links">
+      <a href="https://www.instagram.com/ickybuffalo_breaks" target="_blank">Instagram</a>
+      <a href="https://www.facebook.com/ickybuffalo_breaks" target="_blank">Facebook</a>
+      <a href="https://www.tiktok.com/@ickybuffalo_breaks" target="_blank">TikTok</a>
+    </div>
+    <p class="message">Thanks for checking out our website and inventory! Feel free to reach out with any questions.</p>
+    <p class="email">Email us at: <a href="mailto:contact@ickybuffalobreaks.com">contact@ickybuffalobreaks.com</a></p>
   </main>
 
   <footer>
@@ -64,33 +72,5 @@
       <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
     </div>
   </footer>
-
-  <script>
-    document.getElementById("contactForm").addEventListener("submit", async function(event) {
-        event.preventDefault();
-        const formData = new FormData(this);
-        const responseMessage = document.getElementById("responseMessage");
-
-        try {
-            const response = await fetch("/api/contact", {
-                method: "POST",
-                body: JSON.stringify(Object.fromEntries(formData)),
-                headers: { "Content-Type": "application/json" }
-            });
-
-            const result = await response.json();
-            responseMessage.textContent = result.message;
-            responseMessage.style.color = response.ok ? "green" : "red";
-
-            if (response.ok) {
-                this.reset(); // Clear form on success
-            }
-        } catch (error) {
-            responseMessage.textContent = "Error sending message. Please try again.";
-            responseMessage.style.color = "red";
-        }
-    });
-  </script>
-
 </body>
 </html>

@@ -401,40 +401,6 @@ def send_email(to_email, subject, body):
         print("Email failed to send:", e)
         return False
 
-
-# Route to handle contact form submissions
-@app.route('/api/contact', methods=['POST'])
-def contact():
-    data = request.json  # Get form data from frontend
-
-    name = data.get("name")
-    email = data.get("email")
-    message = data.get("message")
-
-    if not name or not email or not message:
-        return jsonify({"message": "All fields are required"}), 400
-
-    # Email content
-    email_body = f"""
-    New Contact Form Submission:
-    Name: {name}
-    Email: {email}
-    
-    Message:
-    {message}
-    """
-
-    # Send email to admin
-    admin_email = "ntuyen799@yahoo.com"  # Admin email
-    success = send_email(admin_email, "New Contact Form Submission", email_body)
-
-    if success:
-        return jsonify({"message": "Message sent successfully!"}), 200
-    else:
-        return jsonify({"message": "Error sending message"}), 500
-
-
-
 # Checkout by sending interest form to admin email & copy to user email
 @app.route('/checkout', methods=['POST'])
 def checkout():
