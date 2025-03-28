@@ -6,7 +6,7 @@ const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // MySQL DB config
 const dbConfig = {
@@ -81,7 +81,6 @@ app.post("/user", async (req, res) => {
   }
 });
 
-// Login User
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -187,4 +186,26 @@ app.get("/card/all", async (req, res) => {
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+});
+
+// View all submitted interest forms
+app.get('/view_interest', async (req, res) => {
+  const query = 'SELECT * FROM interest_forms ORDER BY id DESC'; // Get all interest forms
+
+  connection.execute(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching data: ', err);
+      return res.send('Error retrieving interest forms.');
+    }
+
+    let html = '<h1>All Interest Forms</h1><table border="1"><tr><th>Name</th><th>Email</th><th>Interest</th></tr>';
+
+    // Loop through the results and display them in a table
+    results.forEach(row => {
+      html += `<tr><td>${row.name}</td><td>${row.email}</td><td>${row.interest}</td></tr>`;
+    });
+
+    html += '</table>';
+    res.send(html);
+  });
 });
