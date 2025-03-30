@@ -1,37 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--This is the customer facing end that allows users to view the baseball cards in stock and perform search qeuries. Also allows for customers to select cards to add to an interest form.-->
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Inventory - ICKY Buffalo Breaks</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .inventory-controls {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .inventory-controls input {
+      padding: 10px;
+      font-size: 1rem;
+      width: 100%;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .inventory-controls fieldset {
+      border: none;
+      padding: 0;
+      margin-bottom: 10px;
+    }
+
+    .inventory-controls label {
+      display: inline-block;
+      margin-right: 20px;
+      font-weight: 500;
+    }
+
+    .inventory-list {
+      max-width: 1100px;
+      margin: 30px auto;
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+
+    .card h2 {
+      margin: 10px 0 5px;
+      font-size: 1.1rem;
+    }
+
+    .card p {
+      margin: 4px 0;
+    }
+
+    .card button {
+      margin-top: 10px;
+      background-color: #006400;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .card button:hover {
+      background-color: #004d00;
+    }
+  </style>
 </head>
 <body>
   <header>
     <h1>Inventory</h1>
     <nav>
       <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/about.html">About</a></li>
+        <li><a href="/home.html">Home</a></li>
+        <li><a href="/aboutpage.html">About</a></li>
         <li><a href="/inventory.html">View Inventory</a></li>
         <li><a href="/contact.html">Contact Us</a></li>
-        <li><a href="/interest.html">Submit an Interest Form</a></li>
+        <li><a href="/interestform.html">Submit Interest Form</a></li>
       </ul>
     </nav>
   </header>
 
-  <div class="main-logo">
-    <img src="/images/icky-buffalo-breaks-logo.jpg" alt="ICKY Buffalo Breaks Logo">
-  </div>
-
   <main>
     <section class="inventory-controls">
-      <input type="text" id="search-bar" placeholder="Search cards...">
-      <label for="sort">Sort by:</label>
-      <select id="sort">
-        <option value="name">Name (A-Z)</option>
-        <option value="price-low">Price (Low to High)</option>
-        <option value="price-high">Price (High to Low)</option>
-      </select>
+      <input type="text" id="search-bar" placeholder="Search by name...">
+      <input type="text" id="team-bar" placeholder="Search by team...">
 
       <fieldset>
         <legend>Filter by Autograph:</legend>
@@ -40,88 +110,88 @@
       </fieldset>
     </section>
 
-    <section class="inventory-list">
-      <div id="cardContainer"></div>
-    </section>
+    <section class="inventory-list" id="cardContainer"></section>
   </main>
 
-  <footer>
-    <div class="footer-content">
-      <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
-    </div>
-  </footer>
-
   <script>
+    let allCards = [];
+
     async function fetchCards() {
       try {
-        const response = await fetch('/card/all');
-        if (!response.ok) throw new Error('Failed to fetch cards');
-        const cards = await response.json();
-        displayCards(cards);
-      } catch (error) {
-        console.error('Error fetching cards:', error);
+        const res = await fetch('/card/all');
+        const cards = await res.json();
+        allCards = cards;
+        filterAndDisplayCards();
+      } catch (err) {
+        console.error('Error fetching cards:', err);
       }
     }
 
+    function addToCart(card) {
+      let cart = JSON.parse(localStorage.getItem('cardCart')) || [];
+      cart.push(card);
+      localStorage.setItem('cardCart', JSON.stringify(cart));
+      alert(`${card.first_name} ${card.last_name} added to cart!`);
+    }
+
     function displayCards(cards) {
-      const container = document.getElementById('cardContainer');
-      container.innerHTML = '';
-      
+      const container = document.getElementById("cardContainer");
+      container.innerHTML = "";
+
       cards.forEach(card => {
-        if (!card.image_url) card.image_url = '/images/default-card.jpg';
-        
-        const cardElement = document.createElement('div');
-        cardElement.classList.add('card');
-        cardElement.innerHTML = `
-          <img src="${card.image_url}" alt="${card.first_name} ${card.last_name}">
+        const div = document.createElement("div");
+        div.className = "card";
+        const imageUrl = card.image_url || "/images/default-card.jpg";
+        div.innerHTML = `
+          <img src="${imageUrl}" alt="${card.first_name} ${card.last_name}" />
           <h2>${card.first_name} ${card.last_name}</h2>
-          <p>Autograph: ${card.autograph ? 'Yes' : 'No'}</p>
-          <p>Price: $${card.price}</p>
-          <p>${card.additional_specifications}</p>
+          <p><strong>Team:</strong> ${card.team || "N/A"}</p>
+          <p><strong>Autograph:</strong> ${card.autograph === 'yes' ? 'Yes' : 'No'}</p>
+          <p>${card.additional_specifications || ''}</p>
+          <button onclick='addToCart(${JSON.stringify(card)})'>Add to Cart</button>
         `;
-        container.appendChild(cardElement);
+        container.appendChild(div);
       });
     }
 
-    function filterAndSortCards() {
-      const searchText = document.getElementById('search-bar').value.toLowerCase();
-      const sortValue = document.getElementById('sort').value;
-      const showAutograph = document.getElementById('filter-autograph').checked;
-      const showNonAutograph = document.getElementById('filter-non-autograph').checked;
-      
-      fetch('/card/all')
-        .then(response => response.json())
-        .then(cards => {
-          let filteredCards = cards.filter(card =>
-            card.first_name.toLowerCase().includes(searchText) ||
-            card.last_name.toLowerCase().includes(searchText)
-          );
-          
-          if (showAutograph && !showNonAutograph) {
-            filteredCards = filteredCards.filter(card => card.autograph);
-          } else if (!showAutograph && showNonAutograph) {
-            filteredCards = filteredCards.filter(card => !card.autograph);
-          }
+    function filterAndDisplayCards() {
+      const nameSearch = document.getElementById('search-bar').value.toLowerCase();
+      const teamSearch = document.getElementById('team-bar').value.toLowerCase();
+      const filterAuto = document.getElementById('filter-autograph').checked;
+      const filterNonAuto = document.getElementById('filter-non-autograph').checked;
 
-          if (sortValue === 'price-low') {
-            filteredCards.sort((a, b) => a.price - b.price);
-          } else if (sortValue === 'price-high') {
-            filteredCards.sort((a, b) => b.price - a.price);
-          } else {
-            filteredCards.sort((a, b) => a.first_name.localeCompare(b.first_name));
-          }
-          
-          displayCards(filteredCards);
-        })
-        .catch(error => console.error('Error filtering/sorting:', error));
+      let filtered = allCards.filter(card => {
+        const fullName = `${card.first_name} ${card.last_name}`.toLowerCase();
+        const teamName = (card.team || "").toLowerCase();
+
+        const matchesName = fullName.includes(nameSearch);
+        const matchesTeam = teamName.includes(teamSearch);
+
+        const isAuto = card.autograph && card.autograph.toLowerCase() === "yes";
+        const showAuto = filterAuto && !filterNonAuto;
+        const showNonAuto = !filterAuto && filterNonAuto;
+        const showAll = !filterAuto && !filterNonAuto;
+
+        const matchesFilter =
+          showAll ||
+          (showAuto && isAuto) ||
+          (showNonAuto && !isAuto) ||
+          (filterAuto && filterNonAuto);
+
+        return matchesName && matchesTeam && matchesFilter;
+      });
+
+      filtered.sort((a, b) => a.first_name.localeCompare(b.first_name));
+
+      displayCards(filtered);
     }
 
-    document.getElementById('search-bar').addEventListener('input', filterAndSortCards);
-    document.getElementById('sort').addEventListener('change', filterAndSortCards);
-    document.getElementById('filter-autograph').addEventListener('change', filterAndSortCards);
-    document.getElementById('filter-non-autograph').addEventListener('change', filterAndSortCards);
-    
-    document.addEventListener('DOMContentLoaded', fetchCards);
+    document.getElementById("search-bar").addEventListener("input", filterAndDisplayCards);
+    document.getElementById("team-bar").addEventListener("input", filterAndDisplayCards);
+    document.getElementById("filter-autograph").addEventListener("change", filterAndDisplayCards);
+    document.getElementById("filter-non-autograph").addEventListener("change", filterAndDisplayCards);
+
+    document.addEventListener("DOMContentLoaded", fetchCards);
   </script>
 </body>
 </html>

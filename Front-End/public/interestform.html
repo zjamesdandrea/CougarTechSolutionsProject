@@ -1,67 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--This form is on the customer facing end and allows for users to view the cards they selected for interest on the inventory page and submit offers to purchase the card(s)-->
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="C:\Users\HP\Desktop\Spring 2025\CIS 4375\Code\CougarTechSolutionsProject\Front-End\public\style.css">
-    <title>Interest Form</title>
-    <style>
-        label {
-            font-weight: bold; /* Makes labels bold */
-            display: block; /* Ensures labels appear above the input fields */
-            margin-bottom: 5px;
-        }
-        input, textarea, button {
-            margin-bottom: 15px; /* Adds space between elements */
-        }
-        input[type="text"], input[type="email"], textarea {
-            width: 100%; /* Makes input fields stretch to full width */
-            font-size: 1.2rem; /* Makes the text boxes larger */
-            padding: 10px; /* Adds padding for better usability */
-        }
-        textarea {
-            resize: vertical; /* Allows vertical resizing only */
-        }
-        button {
-            background-color: #006400; /* Dark green color */
-            color: white;
-            padding: 15px 30px; /* Increases size of the button */
-            font-size: 1.2rem; /* Larger font for the button */
-            border: none;
-            cursor: pointer;
-            border-radius: 5px; /* Adds rounded corners */
-        }
-        button:hover {
-            background-color: #004d00; /* Slightly darker green on hover */
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interest Form - ICKY Buffalo Breaks</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+
+    main form {
+      background-color: #ffffff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      max-width: 700px;
+      margin: 30px auto;
+    }
+
+    main form label {
+      display: block;
+      font-weight: 600;
+      margin-top: 20px;
+      color: #003300;
+    }
+
+    main form input[type="text"],
+    main form input[type="email"],
+    main form input[type="tel"],
+    main form textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+      box-sizing: border-box;
+    }
+
+    main form button {
+      background-color: #006400;
+      color: #fff;
+      border: none;
+      padding: 14px 20px;
+      font-size: 1.1rem;
+      margin-top: 30px;
+      width: 100%;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    main form button:hover {
+      background-color: #004d00;
+    }
+
+    #cart-items {
+      max-width: 700px;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: #eef9ee;
+      border: 1px solid #d2e8d2;
+      border-radius: 10px;
+    }
+
+    #cart-items h2 {
+      margin-top: 0;
+      color: #004d00;
+    }
+
+    #cart-items ul {
+      margin: 10px 0 0 20px;
+      padding: 0;
+    }
+
+    #cart-items li {
+      margin-bottom: 6px;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Interest Form</h1>
-    </header>
-    <div class="container">
-        <form action="[your_form_processing_script]" method="post">
-            <label for="name">Full Name:</label>
-            <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+  <header>
+    <h1>Submit Your Interest</h1>
+    <nav>
+      <ul>
+        <li><a href="/home.html">Home</a></li>
+        <li><a href="/aboutpage.html">About</a></li>
+        <li><a href="/inventory.html">View Inventory</a></li>
+        <li><a href="/contact.html">Contact Us</a></li>
+        <li><a href="/interestform.html">Submit Interest Form</a></li>
+      </ul>
+    </nav>
+  </header>
 
-            <label for="email">Email Address:</label>
-            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+  <main>
+    <section id="cart-items">
+      <h2>Cards You're Interested In</h2>
+      <ul id="cart-list"></ul>
+    </section>
 
-            <label for="interests">Your Interests:</label>
-            <textarea id="interests" name="interests" rows="4" placeholder="Tell us about your interests"></textarea>
+    <form id="interestForm">
+      <label for="name">Full Name:</label>
+      <input type="text" id="name" name="name" placeholder="Enter your full name" required />
 
-            <label for="contact-method">Preferred Method of Contact:</label>
-            <input type="radio" id="contact-email" name="contact-method" value="email" checked>
-            <label for="contact-email">Email</label>
-            <input type="radio" id="contact-phone" name="contact-method" value="phone">
-            <label for="contact-phone">Phone</label>
+      <label for="email">Email Address:</label>
+      <input type="email" id="email" name="email" placeholder="Enter your email" required />
 
-            <label for="newsletter">Subscribe to Newsletter:</label>
-            <input type="checkbox" id="newsletter" name="newsletter">
+      <label for="phone">Phone Number:</label>
+      <input type="tel" id="phone" name="phone" placeholder="Enter your phone number" required />
 
-            <button type="submit">Submit</button>
-        </form>
-    </div>
+      <label for="interests">What interests you about these cards?</label>
+      <textarea id="interests" name="interests" rows="4" placeholder="Let us know..." required></textarea>
+
+      <label for="price">Price you're willing to pay:</label>
+      <input type="text" id="price" name="price" placeholder="e.g. $100 or $25 per card" required />
+
+      <button type="submit">Submit Interest</button>
+    </form>
+  </main>
+
+  <script>
+    const cart = JSON.parse(localStorage.getItem('cardCart')) || [];
+    const cartList = document.getElementById("cart-list");
+
+    if (cart.length === 0) {
+      cartList.innerHTML = "<li>No cards added yet.</li>";
+    } else {
+      cart.forEach(card => {
+        const li = document.createElement("li");
+        li.textContent = `${card.first_name} ${card.last_name}`;
+        cartList.appendChild(li);
+      });
+    }
+
+    document.getElementById("interestForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const interests = document.getElementById("interests").value.trim();
+      const price = document.getElementById("price").value.trim();
+      const cards = localStorage.getItem("cardCart") || "[]";
+
+      const res = await fetch("/interest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, interests, price, cards })
+      });
+
+      if (res.ok) {
+        alert("Thank you! Your interest has been submitted.");
+        localStorage.removeItem("cardCart");
+        window.location.href = "/home.html";
+      } else {
+        alert("Something went wrong. Please try again.");
+      }
+    });
+  </script>
 </body>
 </html>

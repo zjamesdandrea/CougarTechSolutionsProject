@@ -57,10 +57,18 @@ const verifyPassword = async (password, hashedPassword) => {
 
 // --------------- Routes ------------------
 
-// Home & Auth Pages
+// Home & Static Pages
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
 app.get("/signin.html", (req, res) => res.sendFile(path.join(__dirname, "public", "signin.html")));
 app.get("/createaccount.html", (req, res) => res.sendFile(path.join(__dirname, "public", "createaccount.html")));
+app.get("/aboutpage.html", (req, res) => res.sendFile(path.join(__dirname, "public", "aboutpage.html")));
+app.get("/contact.html", (req, res) => res.sendFile(path.join(__dirname, "public", "contact.html")));
+app.get("/interestform.html", (req, res) => res.sendFile(path.join(__dirname, "public", "interestform.html")));
+app.get("/inventory.html", (req, res) => res.sendFile(path.join(__dirname, "public", "inventory.html")));
+app.get("/manage-cards.html", (req, res) => res.sendFile(path.join(__dirname, "public", "manage-cards.html")));
+app.get("/admin-welcome.html", (req, res) => res.sendFile(path.join(__dirname, "public", "admin-welcome.html")));
+app.get("/interestform-logs.html", (req, res) => res.sendFile(path.join(__dirname, "public", "interestform-logs.html")));
+
 
 // Register User
 app.post("/user", async (req, res) => {
@@ -87,19 +95,41 @@ app.post("/login", async (req, res) => {
 
   try {
     const [users] = await db.promise().query("SELECT * FROM Users WHERE email = ?", [email]);
-    if (users.length === 0) return res.status(401).send("Invalid email or password.");
+
+    if (users.length === 0) {
+      console.log("❌ Email not found");
+      return res.status(401).send("Invalid email or password.");
+    }
 
     const user = users[0];
     const isMatch = await verifyPassword(password, user.password);
+
+    console.log("Login debug:", {
+      inputPassword: password,
+      storedHash: user.password,
+      isMatch,
+      role: user.role
+    });
+
     if (!isMatch) return res.status(401).send("Invalid email or password.");
 
-    req.session.user = { id: user.id, email: user.email, name: user.first_name, role: user.role };
-    res.status(200).send("Login successful");
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      name: user.first_name,
+      role: user.role
+    };
+
+    const redirect = user.role === "admin" ? "/admin-welcome.html" : "/";
+    res.status(200).json({ redirect });
+
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).send("Server error.");
   }
 });
+
+
 
 // Check Auth
 app.get("/check-auth", (req, res) => {
@@ -183,6 +213,45 @@ app.get("/card/all", async (req, res) => {
     res.status(500).send("Error fetching cards.");
   }
 });
+
+
+app.post("/interest", async (req, res) => {
+  const { name, email, phone, interests, price, cards } = req.body;
+
+  try {
+    const sql = `INSERT INTO Interest_Forms (full_name, email, phone, interests, price_offered, cards_selected)
+                 VALUES (?, ?, ?, ?, ?, ?)`;
+
+    await db.promise().query(sql, [name, email, phone, interests, price, cards]);
+    res.status(201).send("Interest form submitted successfully.");
+  } catch (err) {
+    console.error("Interest form error:", err);
+    res.status(500).send("Error submitting interest form.");
+  }
+});
+
+app.get("/interest/all", async (req, res) => {
+  try {
+    const [rows] = await db.promise().query("SELECT * FROM Interest_Forms ORDER BY submitted_at DESC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Fetch logs error:", err);
+    res.status(500).send("Error fetching logs.");
+  }
+});
+
+
+app.delete("/interest/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.promise().query("DELETE FROM Interest_Forms WHERE id = ?", [id]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Delete log error:", err);
+    res.status(500).send("Error deleting log.");
+  }
+});
+
 
 // Start Server
 app.listen(PORT, () => {
