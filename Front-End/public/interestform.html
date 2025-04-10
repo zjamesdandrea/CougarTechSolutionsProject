@@ -78,6 +78,17 @@
       margin-bottom: 6px;
     }
   </style>
+  <script type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+  </script>
+  <script type="text/javascript">
+  (function(){
+  emailjs.init({
+    publicKey: "0RcftqUdNFglUFJAp",
+    });
+  })();
+</script>
+<script src="script.js"></script>
 </head>
 <body>
   <header>
@@ -115,7 +126,7 @@
       <label for="price">Price you're willing to pay:</label>
       <input type="text" id="price" name="price" placeholder="e.g. $100 or $25 per card" required />
 
-      <button type="submit">Submit Interest</button>
+      <button type="submit" onclick="sendMail()">Submit Interest</button>
     </form>
   </main>
 
