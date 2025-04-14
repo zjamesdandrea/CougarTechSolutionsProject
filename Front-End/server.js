@@ -6,7 +6,7 @@ const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4100;
 
 // MySQL DB config
 const dbConfig = {
@@ -95,18 +95,28 @@ app.post("/login", async (req, res) => {
   try {
     const [users] = await db.promise().query("SELECT * FROM Users WHERE email = ?", [email]);
 
+
+    console.log("Raw users array:", users);
+
     if (users.length === 0) {
       console.log("❌ Email not found");
       return res.status(401).send("Invalid email or password.");
     }
 
     const user = users[0];
+
+
+    console.log("Full user object from DB:", user);
+
     const isMatch = await verifyPassword(password, user.password);
+
+
 
     console.log("Login debug:", {
       inputPassword: password,
       storedHash: user.password,
       isMatch,
+      userId: user.id,
       role: user.role
     });
 
@@ -118,6 +128,7 @@ app.post("/login", async (req, res) => {
       name: user.first_name,
       role: user.role
     };
+    console.log("✅ Session user created:", req.session.user);
 
     const redirect = user.role === "admin" ? "/admin-welcome.html" : "/";
     res.status(200).json({ redirect });
@@ -217,16 +228,30 @@ app.get("/card/all", async (req, res) => {
 app.post("/interest", async (req, res) => {
   const { name, email, phone, interests, price, cards } = req.body;
 
-  try {
-    const sql = `INSERT INTO Interest_Forms (full_name, email, phone, interests, price_offered, cards_selected)
-                 VALUES (?, ?, ?, ?, ?, ?)`;
+  const userId = req.session.user?.id || null;
+  console.log("Session user:", req.session.user);
+  console.log("Submitting interest with userId:", userId);
 
-    await db.promise().query(sql, [name, email, phone, interests, price, cards]);
+  try {
+    const sql = `INSERT INTO Interest_Forms (full_name, email, phone, interests, price_offered, cards_selected, user_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+    await db.promise().query(sql, [name, email, phone, interests, price, cards, userId]);
     res.status(201).send("Interest form submitted successfully.");
   } catch (err) {
     console.error("Interest form error:", err);
     res.status(500).send("Error submitting interest form.");
   }
+
+  console.log({
+    full_name: name,
+    email: email,
+    phone: phone,
+    interests: interests,
+    price_offered: price,
+    cards_selected: cards,
+    user_id: userId
+  });
 });
 
 app.get("/interest/all", async (req, res) => {
@@ -239,6 +264,22 @@ app.get("/interest/all", async (req, res) => {
   }
 });
 
+
+app.get("/interest/customer", async (req, res) => {
+  const userId = req.session.user?.id;
+  if (!userId) return res.status(401).send("Unauthorized");
+
+  try {
+    const [rows] = await db.promise().query(
+      "SELECT * FROM Interest_Forms WHERE user_id = ? ORDER BY submitted_at DESC",
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Fetch logs error:", err);
+    res.status(500).send("Error fetching logs.");
+  }
+});
 
 app.delete("/interest/:id", async (req, res) => {
   const { id } = req.params;
