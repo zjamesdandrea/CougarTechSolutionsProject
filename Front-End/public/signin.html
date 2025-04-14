@@ -131,8 +131,8 @@ If a customer signns in, then the user is brought back to the home page.-->
           if (data.isAuthenticated) {
             if (data.user.role === "admin") {
               window.location.href = "/admin-welcome.html";
-            } else {
-              window.location.href = "/home.html";
+            } else if (data.user.role === "customer") {
+              window.location.href = "/inventory-logged-in.html";
             }
           } else {
             message.textContent = "Authentication check failed.";
