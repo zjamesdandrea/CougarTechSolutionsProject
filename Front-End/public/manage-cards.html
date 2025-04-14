@@ -41,13 +41,21 @@
 </head>
 <body>
   <header>
-    <h1>Manage Card Inventory</h1>
+    <div class="header-content">
+      <h1>Welcome to ICKY Buffalo Breaks!</h1>
+      <div class="auth-buttons">
+        <a href="/logout" class="btn" id="logout-link" style="display:none;">Log Out</a>
+      </div>
+      </div>
+  
+      <div class="main-logo-img">
+        <img src="/images/icky-buffalo-breaks-logo.jpg">
+      </div>
     <nav>
       <ul>
         <li><a href="/admin-welcome.html">Admin Dashboard</a></li>
-        <li><a href="/manage-cards.html">Manage Cards</a></li>
+        <li><a href="/manage-cards.html" class="active">Manage Cards</a></li>
         <li><a href="/interestform-logs.html">Submitted Interest Form Logs</a></li>
-        <li><a href="/logout">Log Out</a></li>
       </ul>
     </nav>
   </header>
@@ -93,8 +101,8 @@
         <h3>Update Existing Card</h3>
         <form id="update-form">
           <input name="id" placeholder="Card ID (required)" required>
-          <input name="first_name" placeholder="New First Name (optional)">
-          <input name="last_name" placeholder="New Last Name (optional)">
+          <input name="first_name" placeholder="New First Name (optional)" required>
+          <input name="last_name" placeholder="New Last Name (optional)" required>
           <input name="team" placeholder="New Team (optional)">
           <input name="autograph" placeholder="New Autograph (optional)">
           <input name="image_url" placeholder="New Image URL (optional)">
@@ -115,9 +123,9 @@
   </main>
 
   <div class="auth-buttons">
-    <a href="/logout" class="btn" id="logout-link" style="display:none;">Log Out</a>
-    <div id="user-info" style="display:none;">Welcome, <span id="username"></span>!</div>
-  </div>
+    <div id="user-info" style="display:none;">
+      <span id="username" class="hidden"></span>
+    </div>
 
   <footer>
     <div class="footer-content">
@@ -163,13 +171,15 @@
       const formData = new FormData(e.target);
       const json = {};
       json.id = formData.get('id');
+      json.email = 'ickybuffalobreaks@gmail.com';
+      json.password = 'icky';
       ['first_name', 'last_name', 'team', 'autograph', 'image_url', 'additional_specifications'].forEach(field => {
         const value = formData.get(field)?.trim();
         if (value !== '') {
           json[field] = value;
         }
       });
-
+      console.log("Update Payload:", json);
       const res = await fetch('/card', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

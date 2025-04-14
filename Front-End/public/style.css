@@ -9,16 +9,57 @@ body {
 }
 
 /* Header styles */
+
 header {
     background-color: #2c3e50;
     color: white;
     padding: 20px;
+    position: relative;
+}
+
+.header-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 10px 20px;
+}
+
+.main-logo-img {
+    position: absolute;
+    top: 15px; 
+    left: 15px;
+}
+
+.main-logo-img img {
+    width: 150px;  
+    height: auto;
 }
 
 /* Centered Title */
 h1 {
+    font-size: 35px;
     margin: 0;
     text-align: center;
+}
+
+/* Sign-in and Create account buttons */
+.auth-buttons {
+    position: absolute;
+    top: 5px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.auth-buttons .btn {
+    padding: 8px 14px; 
+    font-size: 15px;   
+    margin: 5px;        
+}
+
+.auth-buttons .btn:hover {
+    background-color: #208538;
 }
 
 /* Navigation Bar Styles (Rounded Edges) */
@@ -26,8 +67,8 @@ nav {
     background-color: #28a745; /* Green */
     padding: 10px 0;
     text-align: center;
-    width: 85%;
-    margin: 10px auto;  /* Centers the nav bar */
+    width: 75%;
+    margin: 0 auto;  /* Centers the nav bar */
     border-radius: 25px; /* Rounded edges */
     box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
 }
@@ -40,7 +81,7 @@ nav ul {
 
 nav ul li {
     display: inline;
-    margin: 0 15px;
+    margin: 0 12px;
 }
 
 nav ul li a {
@@ -55,6 +96,10 @@ nav ul li a:hover {
     color: #f1c40f;
 }
 
+nav ul li a.active {
+    color: #f1c40f;
+}
+
 /* Centered Logo as Main Image */
 .main-logo {
     text-align: center;
@@ -62,7 +107,7 @@ nav ul li a:hover {
 }
 
 .main-logo img {
-    width: 300px; /* Adjust as needed */
+    width: 300px; 
     height: auto;
     border-radius: 10px;
     box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
@@ -73,8 +118,14 @@ nav ul li a:hover {
     width: 80%;
     max-width: 800px;
     margin: 20px auto;
-    font-size: 18px;
+    font-size: 17px;
     line-height: 1.6;
+}
+
+/* About page highlight */
+.highlight {
+    font-style: italic;
+    color: #f1c40f; 
 }
 
 /* Footer styles */
@@ -88,10 +139,11 @@ footer {
     bottom: 0;
 }
 
-.auth-buttons {
-    text-align: center;
-    margin: 20px 0;
+
+.hidden {
+    display: none;
   }
+
   
 .btn {
     display: inline-block;

@@ -33,52 +33,89 @@
     .log-entry button:hover {
       background-color: #a83224;
     }
+
+    .deleted {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+  }
+
   </style>
 </head>
 <body>
   <header>
-    <h1>View Your Interest Form Submissions</h1>
+    <div class="header-content">
+      <h1>Welcome to ICKY Buffalo Breaks!</h1>
+      <div class="auth-buttons">
+        <a href="/logout" class="btn">Log Out</a>
+      </div>
+      </div>
+  
+      <div class="main-logo-img">
+        <img src="/images/icky-buffalo-breaks-logo.jpg">
+      </div>
     <nav>
       <ul>
         <li><a href="/home-logged-in.html">Home</a></li>
         <li><a href="/aboutpage-logged-in.html">About</a></li>
-        <li><a href="/inventory-logged-in.html">View Inventory</a></li>
         <li><a href="/contact-logged-in.html">Contact Us</a></li>
+        <li><a href="/inventory-logged-in.html">View Inventory</a></li>
         <li><a href="/interestform-logged-in.html">Submit Interest Form</a></li>
-        <li><a href="/interestedcards-logged-in.html">My Forms</a></li>
+        <li><a href="/interestedcards-logged-in.html" class="active">My Forms</a></li>
       </ul>
     </nav>
   </header>
-  <div id="userLogs"></div>
+  <h2>View Your Interest Form Submissions</h2>
 
-  <script>
-    async function fetchUserLogs() {
-      const res = await fetch("/interest/customer");
-      const logs = await res.json();
-      const container = document.getElementById("userLogs");
-      container.innerHTML = "";
+<div id="userLogs"></div>
+
+<script>
+  async function fetchUserLogs() {
+    const res = await fetch("/interest/customer");
+    const logs = await res.json();
+    const container = document.getElementById("userLogs");
+    container.innerHTML = "";  // Clear the container before appending new logs
   
-      if (logs.length === 0) {
-        container.innerHTML = "<p>You have no submissions yet.</p>";
-        return;
-      }
-  
-      logs.forEach(log => {
-        const div = document.createElement("div");
-        div.className = "log-entry";
-        div.innerHTML = `
-          <h3>${log.full_name}</h3>
-          <p><strong>Email:</strong> ${log.email}</p>
-          <p><strong>Phone:</strong> ${log.phone}</p>
-          <p><strong>Interest:</strong> ${log.interests}</p>
-          <p><strong>Price Offered:</strong> ${log.price_offered}</p>
-          <p><strong>Submitted:</strong> ${new Date(log.submitted_at).toLocaleString()}</p>
-        `;
-        container.appendChild(div);
-      });
+    if (logs.length === 0) {
+      container.innerHTML = "<p>You have no submitted interest forms yet.</p>";
+      return;
     }
   
-    fetchUserLogs();
-  </script>
+    logs.forEach(log => {
+      const div = document.createElement("div");
+      div.className = "log-entry";
+      div.id = `log-${log.id}`;  // Set a unique ID for each log entry
+      div.innerHTML = `
+        <h3>${log.full_name}</h3>
+        <p><strong>Email:</strong> ${log.email}</p>
+        <p><strong>Phone:</strong> ${log.phone}</p>
+        <p><strong>Interest:</strong> ${log.interests}</p>
+        <p><strong>Price Offered:</strong> ${log.price_offered}</p>
+        <p><strong>Submitted:</strong> ${new Date(log.submitted_at).toLocaleString()}</p>
+        <button onclick="deleteLog(${log.id}, this)">Delete</button>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  async function deleteLog(id, button) {
+    if (!confirm("DELETE THIS INTEREST FORM?")) return;
+    // Delete the log and provide immediate UX feedback before removing it from the page
+    const res = await fetch(`/interest/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      const logDiv = button.closest(".log-entry");
+      if (logDiv) {
+        logDiv.classList.add("deleted");
+        
+        // Remove the log after a brief delay (e.g., 2 seconds)
+        setTimeout(() => {
+          logDiv.remove();
+        }, 500); // 2-second delay before removing it
+      }
+    }
+  }
+
+  fetchUserLogs();
+</script>
 </body>
 </html>

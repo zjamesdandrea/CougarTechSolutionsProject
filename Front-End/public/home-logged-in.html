@@ -8,24 +8,33 @@
 </head>
 <body>
   <header>
-    <h1>Welcome to ICKY Buffalo Breaks!</h1>
+    <div class="header-content">
+      <h1>Welcome to ICKY Buffalo Breaks!</h1>
+      <div class="auth-buttons">
+        <a href="/logout" class="btn">Log Out</a>
+      </div>
+      </div>
+  
+      <div class="main-logo-img">
+        <img src="/images/icky-buffalo-breaks-logo.jpg">
+      </div>
     <nav>
       <ul>
-        <li><a href="/home-logged-in.html">Home</a></li>
+        <li><a href="/home-logged-in.html" class="active">Home</a></li>
         <li><a href="/aboutpage-logged-in.html">About</a></li>
-        <li><a href="/inventory-logged-in.html">View Inventory</a></li>
         <li><a href="/contact-logged-in.html">Contact Us</a></li>
+        <li><a href="/inventory-logged-in.html">View Inventory</a></li>
         <li><a href="/interestform-logged-in.html">Submit Interest Form</a></li>
         <li><a href="/interestedcards-logged-in.html">My Forms</a></li>
       </ul>
     </nav>
   </header>
-
   <div class="main-logo">
     <img src="/images/icky-buffalo-breaks-logo.jpg" alt="ICKY Buffalo Breaks Logo">
   </div>
 
   <main>
+    <h1 id="welcome">Welcome, <span id="user-name">Guest</span>!</h1>
     <section class="intro">
       <p>
         ICKY Buffalo Breaks is an online platform to facilitate baseball card trading amongst a large online community. 
@@ -37,15 +46,10 @@
       <p>
         Join our community on 
         <a href="https://www.instagram.com/ickybuffalo_breaks" target="_blank">Instagram</a>
-        to follow the latest additions to our collection and current activity in our community.
+        to follow the latest additions to our collection and current activity.
       </p>
     </section>
   </main>
-
-  <div class="auth-buttons">
-    <a href="/signin.html" class="btn">Sign-In</a>
-    <a href="/createaccount.html" class="btn">Create Account</a>
-  </div>
   <br><br><br>
 
   <footer>
@@ -65,6 +69,20 @@
             document.getElementById("user-info").style.display = "block";
             document.getElementById("username").textContent = data.user.name;
         }
+    });
+
+  fetch("/check-auth")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.isAuthenticated) {
+        document.getElementById("user-name").innerText = data.user.name;
+      } else {
+        window.location.href = "/signin.html"; // If not logged in, redirect
+      }
+    })
+    .catch((err) => {
+      console.error("Auth check failed:", err);
+      window.location.href = "/signin.html";
     });
 </script>
 </body>

@@ -6,7 +6,7 @@ const session = require("express-session");
 const MySQLStore = require("express-mysql-session")(session);
 
 const app = express();
-const PORT = process.env.PORT || 4100;
+const PORT = process.env.PORT || 4000;
 
 // MySQL DB config
 const dbConfig = {
@@ -173,17 +173,38 @@ app.post("/card", async (req, res) => {
 
 // Update Card
 app.put("/card", async (req, res) => {
-  const { id, team, autograph, price, image_url, additional_specifications } = req.body;
+  const {
+    id,
+    first_name,
+    last_name,
+    team,
+    autograph,
+    image_url,
+    additional_specifications
+  } = req.body;
 
   try {
-    const sql = "UPDATE Baseball_Cards SET team = ?, autograph = ?, price = ?, image_url = ?, additional_specifications = ? WHERE id = ?";
-    await db.promise().query(sql, [team, autograph, price, image_url, additional_specifications, id]);
+    const sql = `
+      UPDATE Baseball_Cards
+      SET first_name = ?, last_name = ?, team = ?, autograph = ?, image_url = ?, additional_specifications = ?
+      WHERE id = ?
+    `;
+    await db.promise().query(sql, [
+      first_name,
+      last_name,
+      team,
+      autograph,
+      image_url,
+      additional_specifications,
+      id
+    ]);
     res.status(200).send("Card updated successfully!");
   } catch (err) {
     console.error("Update card error:", err);
     res.status(500).send("Error updating card.");
   }
 });
+
 
 // Delete Card
 app.delete("/card", async (req, res) => {

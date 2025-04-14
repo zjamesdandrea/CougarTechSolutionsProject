@@ -8,13 +8,21 @@
 </head>
 <body>
   <header>
-    <h1>Admin Dashboard</h1>
+    <div class="header-content">
+      <h1>Welcome to ICKY Buffalo Breaks!</h1>
+      <div class="auth-buttons">
+        <a href="/logout" class="btn" id="logout-link" style="display:none;">Log Out</a>
+      </div>
+      </div>
+  
+      <div class="main-logo-img">
+        <img src="/images/icky-buffalo-breaks-logo.jpg">
+      </div>
     <nav>
         <ul>
-          <li><a href="/admin-welcome.html">Admin Dashboard</a></li>
+          <li><a href="/admin-welcome.html" class="active">Admin Dashboard</a></li>
           <li><a href="/manage-cards.html">Manage Cards</a></li>
           <li><a href="/interestform-logs.html">Submitted Interest Form Logs</a></li>
-          <li><a href="/logout">Log Out</a></li>
         </ul>
       </nav>
   </header>
@@ -29,5 +37,8 @@
   <footer>
     <span>&copy; 2025 ICKY Buffalo Breaks. All rights reserved.</span>
   </footer>
+  <script>
+    document.getElementById("logout-link").style.display = "inline-block";
+  </script>
 </body>
 </html>
