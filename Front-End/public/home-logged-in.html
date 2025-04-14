@@ -8,7 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>Welcome to ICKY Buffalo Breaks!</h1>
+    <h1 id="welcome">Welcome, <span id="user-name">Guest</span>!</h1>
     <nav>
       <ul>
         <li><a href="/home-logged-in.html">Home</a></li>
@@ -65,6 +65,20 @@
             document.getElementById("user-info").style.display = "block";
             document.getElementById("username").textContent = data.user.name;
         }
+    });
+
+  fetch("/check-auth")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.isAuthenticated) {
+        document.getElementById("user-name").innerText = data.user.name;
+      } else {
+        window.location.href = "/signin.html"; // If not logged in, redirect
+      }
+    })
+    .catch((err) => {
+      console.error("Auth check failed:", err);
+      window.location.href = "/signin.html";
     });
 </script>
 </body>
