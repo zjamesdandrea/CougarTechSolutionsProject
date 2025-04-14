@@ -1,0 +1,49 @@
+Instructions:
+1 - Run the restapi.py file in the back-end
+2 - Select "New Terminal"
+3 - Enter "cd front-end"
+4 - Enter "node server.js"
+5 - Navigate to the local host and specified port number to view and interact with the webpage
+
+CougarTech Solutions Website Work Breakdown:
+
+    Back-end/SQL Database Development:
+    - Duy's work:
+        > Established the mySQL DB on the AWS servers
+        > Establiished all tables within the mySQL DB
+        > Helped to create the python files to connect the back-end code to the mySQL DB
+    - Tuyen's work:
+        > Led the back-end code Development
+        > Used python to manage all functionality of the Website
+         - CRUD operations for the Baseball_Cards tables
+         - Operations to create an account/signin
+         - Operations to add items to the users cart/interest form
+         - Operations to submit an interest form
+
+    Front-end Development:
+    - Zach, Aya, Angel, Kevin, and Dominion all worked to develop the Front-end
+    - Zach's work:
+        > created the server.js file
+        > home, signin, create account, admin dashboard, interest form logs
+        > Worked on debugging and synchronizing for all files in the front-end
+        > Final updates and checks for errors
+    - Aya's work:
+        > Submit Interest Form
+        > Improved Sign in logic to allow for personalized view
+        > Implemented the email alerts 
+        > Implemented the cart removal button
+    - Kevin's work:
+        > Set up the intial CRUD functionality
+        - Display for cards
+        - Adding cards
+        - Updating cards
+        - Deleting cards
+    - Dominion's work:
+        > Created the about page
+        > Helped with testing
+    - Angel's work:
+        > Created the search page
+        > Implemented the search functions
+        > Linked the search page to the Baseball_Cards DB in mySQL
+        > Created the contact page
+
