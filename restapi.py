@@ -218,35 +218,61 @@ def add_card():
 # Update card information by ID (admin)
 @app.route("/card", methods=["PUT"])
 def update_card():
-    #login in user
-    auth = request.get_json()
-    if not auth or not auth.get('email') or not auth.get('password'):
-        return jsonify({"message": "Unauthorized"}), 401
-    
-    email = auth.get('email')
-    password = auth.get('password')
+    # Step 1: Authenticate user
+    data = request.get_json()
 
-    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({"message": "Unauthorized"}), 401
+
+    email = data['email']
+    password = data['password']
+
     mycreds = creds.myCreds()
     mycon = DBconnection(mycreds.hostname, mycreds.username, mycreds.password, mycreds.database)
-    user = execute_read_query(mycon, sql)  
+
+    # Step 2: Validate user and check admin
+    sql = f"SELECT * FROM Users WHERE email = '{email}' AND password = '{password}'"
+    user = execute_read_query(mycon, sql)
 
     if not user:
         return jsonify({"message": "Invalid credentials"}), 401
     if user[0]['role'] != 'admin':
         return jsonify({"message": "Error: Unauthorized"}), 403
-    
-    data = request.get_json()
-    card_id = data['id']
-    team = data['team']
-    autograph = data['autograph']
-    price = data['price']
-    image_url = data['image_url']
-    additional_specifications = data['additional_specifications']
 
-    sql = f"UPDATE Baseball_Cards SET team = '{team}', autograph = '{autograph}', price = '{price}', image_url = '{image_url}', additional_specifications = '{additional_specifications}' WHERE id = '{card_id}'"
-    execute_update_query(mycon, sql)
-    return "Baseball card updated successfully"
+    # Step 3: Extract and log incoming update data
+    print("🔍 Received update payload:", data)
+
+    try:
+        card_id = data['id']
+        first_name = data['first_name']
+        last_name = data['last_name']
+        team = data['team']
+        autograph = data['autograph']
+        image_url = data['image_url']
+        additional_specifications = data['additional_specifications']
+
+        # Step 4: Build and log the SQL query
+        sql = f"""
+            UPDATE Baseball_Cards 
+            SET first_name = '{first_name}',
+                last_name = '{last_name}',
+                team = '{team}',
+                autograph = '{autograph}',
+                image_url = '{image_url}',
+                additional_specifications = '{additional_specifications}'
+            WHERE id = '{card_id}'
+        """
+        print("🧪 Executing SQL:", sql)
+
+        # Step 5: Execute SQL and confirm update
+        execute_update_query(mycon, sql)
+        print("✅ SQL update ran successfully.")
+        return "Baseball card updated successfully"
+
+    except Exception as e:
+        print("❌ SQL UPDATE FAILED:", e)
+        return jsonify({"message": "Update failed", "error": str(e)}), 500
+
 
 # Delete card by ID (admin)
 @app.route('/card', methods=['DELETE'])
