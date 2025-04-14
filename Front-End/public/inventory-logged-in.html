@@ -86,13 +86,22 @@
 </head>
 <body>
   <header>
-    <h1>Inventory</h1>
+      <div class="header-content">
+      <h1>Welcome to ICKY Buffalo Breaks!</h1>
+      <div class="auth-buttons">
+        <a href="/logout" class="btn" id="logout-link" style="display:none;">Log Out</a>
+      </div>
+      </div>
+  
+      <div class="main-logo-img">
+        <img src="/images/icky-buffalo-breaks-logo.jpg">
+      </div>
     <nav>
       <ul>
         <li><a href="/home-logged-in.html">Home</a></li>
         <li><a href="/aboutpage-logged-in.html">About</a></li>
-        <li><a href="/inventory-logged-in.html">View Inventory</a></li>
         <li><a href="/contact-logged-in.html">Contact Us</a></li>
+        <li><a href="/inventory-logged-in.html" class="active">View Inventory</a></li>
         <li><a href="/interestform-logged-in.html">Submit Interest Form</a></li>
         <li><a href="/interestedcards-logged-in.html">My Forms</a></li>
       </ul>
@@ -233,6 +242,7 @@
     document.getElementById("team-bar").addEventListener("input", filterAndDisplayCards);
     document.getElementById("filter-autograph").addEventListener("change", filterAndDisplayCards);
     document.getElementById("filter-non-autograph").addEventListener("change", filterAndDisplayCards);
+    document.getElementById("logout-link").style.display = "inline-block";
 
     document.addEventListener("DOMContentLoaded", fetchCards);
   </script>

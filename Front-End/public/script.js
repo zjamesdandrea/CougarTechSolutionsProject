@@ -7,7 +7,7 @@ function sendMail(){
         price : document.getElementById("price").value,
         cartlist: getCartList()
     }
-    emailjs.send("service_3dghn9p","template_l3t414k",parms).then(alert("Email Sent!"))
+    emailjs.send("service_3dghn9p","template_l3t414k",parms)
 }
 
 function getCartList() {
