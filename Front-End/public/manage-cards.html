@@ -93,8 +93,8 @@
         <h3>Update Existing Card</h3>
         <form id="update-form">
           <input name="id" placeholder="Card ID (required)" required>
-          <input name="first_name" placeholder="New First Name (optional)">
-          <input name="last_name" placeholder="New Last Name (optional)">
+          <input name="first_name" placeholder="New First Name (optional)" required>
+          <input name="last_name" placeholder="New Last Name (optional)" required>
           <input name="team" placeholder="New Team (optional)">
           <input name="autograph" placeholder="New Autograph (optional)">
           <input name="image_url" placeholder="New Image URL (optional)">
@@ -163,13 +163,15 @@
       const formData = new FormData(e.target);
       const json = {};
       json.id = formData.get('id');
+      json.email = 'ickybuffalobreaks@gmail.com';
+      json.password = 'icky';
       ['first_name', 'last_name', 'team', 'autograph', 'image_url', 'additional_specifications'].forEach(field => {
         const value = formData.get(field)?.trim();
         if (value !== '') {
           json[field] = value;
         }
       });
-
+      console.log("Update Payload:", json);
       const res = await fetch('/card', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
